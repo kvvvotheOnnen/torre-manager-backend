@@ -2,6 +2,7 @@
 
 namespace Features\Auth\Domain\UseCases;
 
+use Features\Auth\Domain\Entities\Sesion;
 use Features\Auth\Domain\Exceptions\InvalidCredentialsException;
 use Features\Auth\Domain\Repositories\AuthRepositoryInterface;
 use InvalidArgumentException;
@@ -16,7 +17,7 @@ final class LoginUseCase
      * @throws InvalidArgumentException
      * @throws InvalidCredentialsException
      */
-    public function execute(string $email, string $password): string
+    public function execute(string $email, string $password): Sesion
     {
         $email = trim($email);
 

@@ -17,7 +17,7 @@ class AuthController extends Controller
     public function login(LoginRequest $request): JsonResponse
     {
         try {
-            $token = $this->loginUseCase->execute(
+            $sesion = $this->loginUseCase->execute(
                 $request->string('email')->toString(),
                 $request->string('password')->toString(),
             );
@@ -27,9 +27,17 @@ class AuthController extends Controller
             ], 401);
         }
 
+        $usuario = $sesion->usuario();
+
         return response()->json([
-            'access_token' => $token,
+            'access_token' => $sesion->token(),
             'token_type' => 'Bearer',
+            'user' => [
+                'id' => $usuario->id(),
+                'nombre' => $usuario->nombre(),
+                'correo' => $usuario->correo(),
+                'rol' => $usuario->rol()->value,
+            ],
         ], 200);
     }
 }

@@ -3,13 +3,14 @@
 namespace Features\Auth\Data\Repositories;
 
 use App\Models\User;
+use Features\Auth\Domain\Entities\Sesion;
 use Features\Auth\Domain\Exceptions\InvalidCredentialsException;
 use Features\Auth\Domain\Repositories\AuthRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
 
 final class AuthRepository implements AuthRepositoryInterface
 {
-    public function login(string $email, string $password): string
+    public function login(string $email, string $password): Sesion
     {
         /** @var User|null $user */
         $user = User::query()->where('email', $email)->first();
@@ -18,6 +19,9 @@ final class AuthRepository implements AuthRepositoryInterface
             throw InvalidCredentialsException::becauseCredentialsAreWrong();
         }
 
-        return $user->createToken('api')->plainTextToken;
+        return new Sesion(
+            token: $user->createToken('api')->plainTextToken,
+            usuario: $user->toEntity(),
+        );
     }
 }
