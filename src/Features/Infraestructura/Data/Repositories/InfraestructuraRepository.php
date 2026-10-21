@@ -70,6 +70,33 @@ final class InfraestructuraRepository implements InfraestructuraRepositoryInterf
         return $usuario->proyecto->toEntity();
     }
 
+    public function obtenerProyectoActivo(string $usuarioId, ?string $proyectoIdSolicitado): ProyectoEntity
+    {
+        $usuario = \App\Models\User::query()->with('proyecto')->find($usuarioId);
+
+        if ($usuario?->proyecto !== null) {
+            return $usuario->proyecto->toEntity();
+        }
+
+        if ($proyectoIdSolicitado !== null && $proyectoIdSolicitado !== '') {
+            $proyecto = Proyecto::find($proyectoIdSolicitado);
+
+            if ($proyecto === null) {
+                throw new RecursoNoEncontradoException('El proyecto solicitado no existe.');
+            }
+
+            return $proyecto->toEntity();
+        }
+
+        $proyecto = Proyecto::query()->orderBy('id')->first();
+
+        if ($proyecto === null) {
+            throw new RecursoNoEncontradoException('No hay proyectos registrados.');
+        }
+
+        return $proyecto->toEntity();
+    }
+
     public function crearAgrupacionEnCascada(string $proyectoId, string $nombre, TipoAgrupacion $tipo, array $unidades): \Features\Infraestructura\Domain\Entities\Agrupacion
     {
         try {

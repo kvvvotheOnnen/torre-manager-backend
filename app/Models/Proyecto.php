@@ -7,6 +7,7 @@ use Features\Infraestructura\Domain\Entities\Proyecto as ProyectoEntity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Proyecto extends Model
 {
@@ -18,6 +19,11 @@ class Proyecto extends Model
     public function agrupaciones(): HasMany
     {
         return $this->hasMany(Agrupacion::class);
+    }
+
+    public function unidadesPrincipales(): HasManyThrough
+    {
+        return $this->hasManyThrough(UnidadPrincipal::class, Agrupacion::class);
     }
 
     public function unidadesAccesorias(): HasMany

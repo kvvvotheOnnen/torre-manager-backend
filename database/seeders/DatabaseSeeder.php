@@ -14,6 +14,14 @@ final class DatabaseSeeder extends Seeder
     {
         $proyecto = Proyecto::factory()->create(['nombre' => 'Condominio Demo']);
 
+        User::factory()->create([
+            'nombre' => 'Superadministrador Demo',
+            'email' => env('SUPERADMIN_EMAIL', 'superadmin@torremanager.test'),
+            'password' => Hash::make(env('SUPERADMIN_PASSWORD', 'password')),
+            'rol' => Rol::Superadmin->value,
+            'proyecto_id' => null,
+        ]);
+
         User::factory()->administrador()->create([
             'nombre' => 'Administrador Demo',
             'email' => env('ADMIN_EMAIL', 'admin@torremanager.test'),

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\InfraestructuraController;
+use App\Http\Controllers\Api\SuperadminController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -11,7 +12,11 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::middleware(['auth:sanctum', 'role:administrador'])->prefix('infraestructura')->group(function (): void {
+Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->group(function (): void {
+    Route::get('proyectos', [SuperadminController::class, 'proyectos']);
+});
+
+Route::middleware(['auth:sanctum', 'role:administrador,superadmin'])->prefix('infraestructura')->group(function (): void {
     Route::get('proyecto', [InfraestructuraController::class, 'miProyecto']);
     Route::post('proyectos', [InfraestructuraController::class, 'crearProyecto']);
     Route::post('agrupaciones', [InfraestructuraController::class, 'crearAgrupacion']);

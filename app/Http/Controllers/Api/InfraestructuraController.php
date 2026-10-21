@@ -21,8 +21,8 @@ use Features\Infraestructura\Domain\UseCases\CrearProyectoUseCase;
 use Features\Infraestructura\Domain\UseCases\CrearUnidadAccesoriaUseCase;
 use Features\Infraestructura\Domain\UseCases\GeneradorIdentificacionesUnidades;
 use Features\Infraestructura\Domain\UseCases\ObtenerArbolInfraestructuraUseCase;
-use Features\Infraestructura\Domain\UseCases\ObtenerProyectoDelUsuarioUseCase;
 use Features\Infraestructura\Domain\UseCases\RegistrarAgrupacionEnCascadaUseCase;
+use Features\Infraestructura\Domain\UseCases\ResolverProyectoActivoUseCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
@@ -35,14 +35,17 @@ final class InfraestructuraController extends Controller
         private readonly CrearUnidadAccesoriaUseCase $crearUnidadAccesoriaUseCase,
         private readonly AsignarUnidadAccesoriaUseCase $asignarUnidadAccesoriaUseCase,
         private readonly ObtenerArbolInfraestructuraUseCase $obtenerArbolUseCase,
-        private readonly ObtenerProyectoDelUsuarioUseCase $obtenerProyectoDelUsuarioUseCase,
+        private readonly ResolverProyectoActivoUseCase $resolverProyectoActivoUseCase,
         private readonly GeneradorIdentificacionesUnidades $generador,
     ) {}
 
-    public function miProyecto(): JsonResponse
+    public function miProyecto(Request $request): JsonResponse
     {
         try {
-            $proyecto = $this->obtenerProyectoDelUsuarioUseCase->execute((string) auth()->id());
+            $proyecto = $this->resolverProyectoActivoUseCase->execute(
+                (string) auth()->id(),
+                $request->input('proyecto_id'),
+            );
         } catch (RecursoNoEncontradoException $exception) {
             return response()->json(['message' => $exception->getMessage()], 404);
         }
@@ -70,7 +73,10 @@ final class InfraestructuraController extends Controller
     {
         try {
             $agrupacion = $this->registrarAgrupacionEnCascadaUseCase->execute(
-                (string) auth()->user()->proyecto_id,
+                $this->resolverProyectoActivoUseCase->execute(
+                    (string) auth()->id(),
+                    $request->input('proyecto_id'),
+                )->id(),
                 $request->string('nombre')->toString(),
                 $request->string('tipo')->toString(),
                 $request->input('prefijo'),
@@ -93,7 +99,10 @@ final class InfraestructuraController extends Controller
     {
         try {
             $unidad = $this->crearUnidadAccesoriaUseCase->execute(
-                (string) auth()->user()->proyecto_id,
+                $this->resolverProyectoActivoUseCase->execute(
+                    (string) auth()->id(),
+                    $request->input('proyecto_id'),
+                )->id(),
                 $request->string('identificador')->toString(),
                 $request->string('tipo')->toString(),
                 $request->input('unidad_principal_id'),
@@ -123,10 +132,15 @@ final class InfraestructuraController extends Controller
         return response()->json($this->serializarUnidadAccesoria($unidad));
     }
 
-    public function arbol(): JsonResponse
+    public function arbol(Request $request): JsonResponse
     {
         try {
-            $arbol = $this->obtenerArbolUseCase->execute((string) auth()->user()->proyecto_id);
+            $arbol = $this->obtenerArbolUseCase->execute(
+                $this->resolverProyectoActivoUseCase->execute(
+                    (string) auth()->id(),
+                    $request->input('proyecto_id'),
+                )->id(),
+            );
         } catch (RecursoNoEncontradoException $exception) {
             return response()->json(['message' => $exception->getMessage()], 404);
         }

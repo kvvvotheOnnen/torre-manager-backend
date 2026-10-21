@@ -26,6 +26,14 @@ interface InfraestructuraRepositoryInterface
     public function obtenerProyectoDelUsuario(string $usuarioId): Proyecto;
 
     /**
+     * Resuelve el proyecto activo: el del usuario, o el solicitado (superadmin),
+     * o el primero disponible como último recurso.
+     *
+     * @throws RecursoNoEncontradoException
+     */
+    public function obtenerProyectoActivo(string $usuarioId, ?string $proyectoIdSolicitado): Proyecto;
+
+    /**
      * @param UnidadPrincipal[] $unidades
      *
      * @throws RecursoDuplicadoException

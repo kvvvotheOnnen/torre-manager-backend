@@ -43,4 +43,15 @@ class UserFactory extends Factory
             'rol' => Rol::Administrador->value,
         ]);
     }
+
+    /**
+     * Indicate that the model has the Superadmin role (tenant-agnostic).
+     */
+    public function superadmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'rol' => Rol::Superadmin->value,
+            'proyecto_id' => null,
+        ]);
+    }
 }
