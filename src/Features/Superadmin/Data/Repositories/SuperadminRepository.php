@@ -6,10 +6,16 @@ use App\Models\Proyecto;
 use App\Models\User;
 use Features\Auth\Domain\Entities\Rol;
 use Features\Superadmin\Domain\Entities\Administrador;
+use Features\Superadmin\Domain\Entities\InstalacionExtra;
+use Features\Superadmin\Domain\Entities\ModuloSistema;
+use Features\Superadmin\Domain\Entities\ProyectoDetalle;
 use Features\Superadmin\Domain\Entities\ResumenProyecto;
+use Features\Superadmin\Domain\Entities\TipoCondominio;
 use Features\Superadmin\Domain\Exceptions\EmailDuplicadoException;
+use Features\Superadmin\Domain\Exceptions\RecursoNoEncontradoException;
 use Features\Superadmin\Domain\Repositories\SuperadminRepositoryInterface;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
@@ -68,6 +74,94 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
             nombre: $user->nombre,
             correo: $user->email,
             rol: Rol::Administrador,
+        );
+    }
+
+    public function crearProyectoConAdministradores(
+        string $nombre,
+        ?string $descripcion,
+        TipoCondominio $tipoCondominio,
+        array $modulos,
+        array $instalaciones,
+        array $administradoresIds,
+    ): ProyectoDetalle {
+        $administradores = User::query()
+            ->whereIn('id', $administradoresIds)
+            ->where('rol', Rol::Administrador->value)
+            ->get();
+
+        if ($administradores->count() !== count($administradoresIds)) {
+            throw new RecursoNoEncontradoException('Uno o más administradores no existen o no tienen el rol correcto.');
+        }
+
+        $proyecto = DB::transaction(function () use (
+            $nombre,
+            $descripcion,
+            $tipoCondominio,
+            $modulos,
+            $instalaciones,
+            $administradores,
+        ) {
+            $proyecto = Proyecto::create([
+                'nombre' => $nombre,
+                'descripcion' => $descripcion,
+                'tipo_condominio' => $tipoCondominio->value,
+                'modulos' => array_map(static fn (ModuloSistema $modulo) => $modulo->value, $modulos),
+            ]);
+
+            foreach ($instalaciones as $instalacion) {
+                $proyecto->instalacionesExtra()->create([
+                    'nombre' => $instalacion['nombre'],
+                    'tipo' => $instalacion['tipo'] ?? null,
+                    'atributos' => $instalacion['atributos'] ?? null,
+                ]);
+            }
+
+            $proyecto->administradores()->sync($administradores->modelKeys());
+
+            return $proyecto;
+        });
+
+        return $this->toProyectoDetalle($proyecto->load('instalacionesExtra', 'administradores'));
+    }
+
+    public function listarProyectosDelUsuario(string $usuarioId): array
+    {
+        $usuario = User::query()->find($usuarioId);
+
+        if ($usuario === null) {
+            throw new RecursoNoEncontradoException('El usuario no existe.');
+        }
+
+        if ($usuario->rol === Rol::Superadmin->value) {
+            $proyectos = Proyecto::query()->with('instalacionesExtra', 'administradores')->orderBy('nombre')->get();
+        } else {
+            $proyectos = $usuario->proyectos()
+                ->with('instalacionesExtra', 'administradores')
+                ->orderBy('nombre')
+                ->get();
+        }
+
+        return $proyectos->map(fn (Proyecto $proyecto) => $this->toProyectoDetalle($proyecto))->all();
+    }
+
+    private function toProyectoDetalle(Proyecto $proyecto): ProyectoDetalle
+    {
+        return new ProyectoDetalle(
+            id: (string) $proyecto->getKey(),
+            nombre: $proyecto->nombre,
+            descripcion: $proyecto->descripcion,
+            tipoCondominio: TipoCondominio::from($proyecto->tipo_condominio ?? 'torres'),
+            modulos: array_map(
+                static fn (string $modulo) => ModuloSistema::from($modulo),
+                $proyecto->modulos ?? [],
+            ),
+            instalacionesExtra: $proyecto->instalacionesExtra
+                ->map(static fn (\App\Models\InstalacionExtra $instalacion) => $instalacion->toEntity())
+                ->all(),
+            administradoresIds: $proyecto->administradores
+                ->map(static fn (User $user) => (string) $user->getKey())
+                ->all(),
         );
     }
 }

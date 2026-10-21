@@ -13,6 +13,11 @@ final class InfraestructuraSeeder extends Seeder
     {
         $proyecto = Proyecto::query()->first() ?? Proyecto::factory()->create(['nombre' => 'Condominio Demo']);
 
+        $proyecto->instalacionesExtra()->firstOrCreate(
+            ['nombre' => 'Quincho Comunitario'],
+            ['tipo' => 'quincho'],
+        );
+
         $torre = Agrupacion::factory()->for($proyecto)->create([
             'nombre' => 'Torre A',
             'tipo' => 'torre',

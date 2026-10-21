@@ -12,10 +12,15 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+Route::middleware(['auth:sanctum', 'role:administrador,superadmin'])->group(function (): void {
+    Route::get('mis-proyectos', [SuperadminController::class, 'misProyectos']);
+});
+
 Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->group(function (): void {
-    Route::get('proyectos', [SuperadminController::class, 'proyectos']);
     Route::get('administradores', [SuperadminController::class, 'administradores']);
     Route::post('administradores', [SuperadminController::class, 'crearAdministrador']);
+    Route::get('proyectos', [SuperadminController::class, 'proyectos']);
+    Route::post('proyectos', [SuperadminController::class, 'crearProyecto']);
 });
 
 Route::middleware(['auth:sanctum', 'role:administrador,superadmin'])->prefix('infraestructura')->group(function (): void {

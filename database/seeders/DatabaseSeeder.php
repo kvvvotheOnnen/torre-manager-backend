@@ -27,7 +27,7 @@ final class DatabaseSeeder extends Seeder
             'email' => env('ADMIN_EMAIL', 'admin@torremanager.test'),
             'password' => Hash::make(env('ADMIN_PASSWORD', 'password')),
             'proyecto_id' => $proyecto->getKey(),
-        ]);
+        ])->proyectos()->sync([$proyecto->getKey()]);
 
         User::factory()->create([
             'nombre' => 'Residente Demo',
