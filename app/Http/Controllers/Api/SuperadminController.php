@@ -137,7 +137,7 @@ final class SuperadminController extends Controller
                     'id' => $instalacion->id(),
                     'nombre' => $instalacion->nombre(),
                     'tipo' => $instalacion->tipo(),
-                    'atributos' => $instalacion->atributos(),
+                    'atributos' => $instalacion->atributos() === [] ? (object) [] : $instalacion->atributos(),
                 ],
                 $proyecto->instalacionesExtra(),
             ),
