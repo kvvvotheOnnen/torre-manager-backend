@@ -6,6 +6,8 @@ use App\Models\Agrupacion;
 use App\Models\Proyecto;
 use App\Models\UnidadAccesoria;
 use App\Models\UnidadPrincipal;
+use App\Models\User;
+use Features\Auth\Domain\Entities\Rol;
 use Features\Infraestructura\Domain\Entities\ArbolAgrupacion;
 use Features\Infraestructura\Domain\Entities\ArbolInfraestructura;
 use Features\Infraestructura\Domain\Entities\ArbolUnidadPrincipal;
@@ -72,22 +74,58 @@ final class InfraestructuraRepository implements InfraestructuraRepositoryInterf
 
     public function obtenerProyectoActivo(string $usuarioId, ?string $proyectoIdSolicitado): ProyectoEntity
     {
-        $usuario = \App\Models\User::query()->with('proyecto')->find($usuarioId);
+        $usuario = User::query()->with('proyecto')->find($usuarioId);
 
-        if ($usuario?->proyecto !== null) {
-            return $usuario->proyecto->toEntity();
+        if ($usuario === null) {
+            throw new RecursoNoEncontradoException('El usuario no existe.');
         }
 
-        if ($proyectoIdSolicitado !== null && $proyectoIdSolicitado !== '') {
-            $proyecto = Proyecto::find($proyectoIdSolicitado);
+        $esSuperadmin = $usuario->rol === Rol::Superadmin->value;
 
-            if ($proyecto === null) {
-                throw new RecursoNoEncontradoException('El proyecto solicitado no existe.');
+        if ($esSuperadmin) {
+            if ($proyectoIdSolicitado !== null && $proyectoIdSolicitado !== '') {
+                return $this->buscarProyecto($proyectoIdSolicitado);
             }
 
-            return $proyecto->toEntity();
+            return $this->primerProyecto();
         }
 
+        $proyectosIds = $usuario->proyectos()->pluck('proyectos.id')->map(fn ($id) => (string) $id)->all();
+
+        if ($usuario->proyecto_id !== null) {
+            array_unshift($proyectosIds, (string) $usuario->proyecto_id);
+        }
+
+        $proyectosIds = array_values(array_unique($proyectosIds));
+
+        if ($proyectoIdSolicitado !== null && $proyectoIdSolicitado !== '') {
+            if (! in_array((string) $proyectoIdSolicitado, $proyectosIds, true)) {
+                throw new RecursoNoEncontradoException('No tienes acceso al proyecto solicitado.');
+            }
+
+            return $this->buscarProyecto($proyectoIdSolicitado);
+        }
+
+        if ($proyectosIds === []) {
+            throw new RecursoNoEncontradoException('El usuario no tiene proyectos asignados.');
+        }
+
+        return $this->buscarProyecto($proyectosIds[0]);
+    }
+
+    private function buscarProyecto(string $proyectoId): ProyectoEntity
+    {
+        $proyecto = Proyecto::find($proyectoId);
+
+        if ($proyecto === null) {
+            throw new RecursoNoEncontradoException('El proyecto solicitado no existe.');
+        }
+
+        return $proyecto->toEntity();
+    }
+
+    private function primerProyecto(): ProyectoEntity
+    {
         $proyecto = Proyecto::query()->orderBy('id')->first();
 
         if ($proyecto === null) {

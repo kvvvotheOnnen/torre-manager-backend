@@ -44,7 +44,7 @@ final class InfraestructuraController extends Controller
         try {
             $proyecto = $this->resolverProyectoActivoUseCase->execute(
                 (string) auth()->id(),
-                $request->input('proyecto_id'),
+                $this->proyectoIdSolicitado($request),
             );
         } catch (RecursoNoEncontradoException $exception) {
             return response()->json(['message' => $exception->getMessage()], 404);
@@ -75,7 +75,7 @@ final class InfraestructuraController extends Controller
             $agrupacion = $this->registrarAgrupacionEnCascadaUseCase->execute(
                 $this->resolverProyectoActivoUseCase->execute(
                     (string) auth()->id(),
-                    $request->input('proyecto_id'),
+                    $this->proyectoIdSolicitado($request),
                 )->id(),
                 $request->string('nombre')->toString(),
                 $request->string('tipo')->toString(),
@@ -101,7 +101,7 @@ final class InfraestructuraController extends Controller
             $unidad = $this->crearUnidadAccesoriaUseCase->execute(
                 $this->resolverProyectoActivoUseCase->execute(
                     (string) auth()->id(),
-                    $request->input('proyecto_id'),
+                    $this->proyectoIdSolicitado($request),
                 )->id(),
                 $request->string('identificador')->toString(),
                 $request->string('tipo')->toString(),
@@ -138,7 +138,7 @@ final class InfraestructuraController extends Controller
             $arbol = $this->obtenerArbolUseCase->execute(
                 $this->resolverProyectoActivoUseCase->execute(
                     (string) auth()->id(),
-                    $request->input('proyecto_id'),
+                    $this->proyectoIdSolicitado($request),
                 )->id(),
             );
         } catch (RecursoNoEncontradoException $exception) {
@@ -162,6 +162,11 @@ final class InfraestructuraController extends Controller
         }
 
         return response()->json(['identificadores' => $identificaciones]);
+    }
+
+    private function proyectoIdSolicitado(Request $request): ?string
+    {
+        return $request->header('X-Proyecto-Id') ?? $request->input('proyecto_id');
     }
 
     private function serializarProyecto(Proyecto $proyecto): array
