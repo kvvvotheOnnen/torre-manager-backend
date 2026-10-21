@@ -14,6 +14,8 @@ Route::get('/user', function (Request $request) {
 
 Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->group(function (): void {
     Route::get('proyectos', [SuperadminController::class, 'proyectos']);
+    Route::get('administradores', [SuperadminController::class, 'administradores']);
+    Route::post('administradores', [SuperadminController::class, 'crearAdministrador']);
 });
 
 Route::middleware(['auth:sanctum', 'role:administrador,superadmin'])->prefix('infraestructura')->group(function (): void {
