@@ -34,9 +34,11 @@ interface SuperadminRepositoryInterface
     public function crearAdministrador(string $nombre, string $correo, string $password): Administrador;
 
     /**
-     * Crea un proyecto (tenant) y anexa a los administradores indicados.
+     * Crea un proyecto (tenant) con su estructura de infraestructura y anexa a
+     * los administradores indicados.
      *
      * @param ModuloSistema[] $modulos
+     * @param array<int, array{nombre: string, tipo: \Features\Infraestructura\Domain\Entities\TipoAgrupacion, identificadores: string[]}> $agrupaciones
      * @param array<int, array{nombre: string, tipo?: ?string, atributos?: ?array<string, mixed>}> $instalaciones
      * @param string[] $administradoresIds
      *
@@ -47,6 +49,7 @@ interface SuperadminRepositoryInterface
         ?string $descripcion,
         TipoCondominio $tipoCondominio,
         array $modulos,
+        array $agrupaciones,
         array $instalaciones,
         array $administradoresIds,
     ): ProyectoDetalle;

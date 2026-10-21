@@ -55,6 +55,7 @@ final class SuperadminController extends Controller
                 $request->input('descripcion'),
                 $request->string('tipo_condominio')->toString(),
                 $request->input('modulos', []),
+                $request->input('agrupaciones', []),
                 $request->input('instalaciones', []),
                 array_map('strval', $request->input('admin_ids', [])),
             );

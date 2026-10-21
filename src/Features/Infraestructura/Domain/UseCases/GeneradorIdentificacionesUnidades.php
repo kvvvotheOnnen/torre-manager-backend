@@ -47,4 +47,31 @@ final class GeneradorIdentificacionesUnidades
 
         return $identificaciones;
     }
+
+    /**
+     * Genera identificaciones secuenciales para casas (ej. "Casa 1".."Casa 6").
+     *
+     * @return string[]
+     *
+     * @throws InvalidArgumentException
+     */
+    public function generarSecuencial(string $prefijo, int $cantidad): array
+    {
+        if ($cantidad < 1) {
+            throw new InvalidArgumentException('Debe existir al menos una unidad.');
+        }
+
+        if ($cantidad > self::MAX_UNIDADES) {
+            throw new InvalidArgumentException('La generación excede el máximo de '.self::MAX_UNIDADES.' unidades.');
+        }
+
+        $prefijo = trim($prefijo);
+        $identificaciones = [];
+
+        for ($n = 1; $n <= $cantidad; $n++) {
+            $identificaciones[] = ($prefijo !== '' ? $prefijo.' ' : '').$n;
+        }
+
+        return $identificaciones;
+    }
 }

@@ -82,6 +82,7 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
         ?string $descripcion,
         TipoCondominio $tipoCondominio,
         array $modulos,
+        array $agrupaciones,
         array $instalaciones,
         array $administradoresIds,
     ): ProyectoDetalle {
@@ -99,6 +100,7 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
             $descripcion,
             $tipoCondominio,
             $modulos,
+            $agrupaciones,
             $instalaciones,
             $administradores,
         ) {
@@ -108,6 +110,20 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
                 'tipo_condominio' => $tipoCondominio->value,
                 'modulos' => array_map(static fn (ModuloSistema $modulo) => $modulo->value, $modulos),
             ]);
+
+            foreach ($agrupaciones as $agrupacion) {
+                $creada = $proyecto->agrupaciones()->create([
+                    'nombre' => $agrupacion['nombre'],
+                    'tipo' => $agrupacion['tipo']->value,
+                ]);
+
+                $creada->unidadesPrincipales()->createMany(
+                    array_map(
+                        static fn (string $identificador) => ['identificador' => $identificador],
+                        $agrupacion['identificadores'],
+                    ),
+                );
+            }
 
             foreach ($instalaciones as $instalacion) {
                 $proyecto->instalacionesExtra()->create([
