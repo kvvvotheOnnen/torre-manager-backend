@@ -55,6 +55,32 @@ interface SuperadminRepositoryInterface
     ): ProyectoDetalle;
 
     /**
+     * Obtiene el detalle de un proyecto por su identificador.
+     *
+     * @throws RecursoNoEncontradoException
+     */
+    public function buscarProyecto(string $id): ProyectoDetalle;
+
+    /**
+     * Actualiza los datos editables de un proyecto (tenant) y su asociación
+     * con administradores.
+     *
+     * @param ModuloSistema[] $modulos
+     * @param array<int, array{nombre: string, tipo?: ?string, atributos?: ?array<string, mixed>}> $instalaciones
+     * @param string[] $administradoresIds
+     *
+     * @throws RecursoNoEncontradoException
+     */
+    public function actualizarProyecto(
+        string $id,
+        string $nombre,
+        ?string $descripcion,
+        array $modulos,
+        array $instalaciones,
+        array $administradoresIds,
+    ): ProyectoDetalle;
+
+    /**
      * Lista los proyectos a los que un usuario está anexado.
      *
      * @return ProyectoDetalle[]

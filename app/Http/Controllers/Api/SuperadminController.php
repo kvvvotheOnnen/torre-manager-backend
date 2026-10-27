@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Superadmin\ActualizarProyectoRequest;
 use App\Http\Requests\Superadmin\CrearAdministradorRequest;
 use App\Http\Requests\Superadmin\CrearProyectoRequest;
 use Features\Superadmin\Domain\Entities\Administrador;
@@ -12,6 +13,8 @@ use Features\Superadmin\Domain\Entities\ProyectoDetalle;
 use Features\Superadmin\Domain\Entities\ResumenProyecto;
 use Features\Superadmin\Domain\Exceptions\EmailDuplicadoException;
 use Features\Superadmin\Domain\Exceptions\RecursoNoEncontradoException;
+use Features\Superadmin\Domain\UseCases\ActualizarProyectoUseCase;
+use Features\Superadmin\Domain\UseCases\BuscarProyectoUseCase;
 use Features\Superadmin\Domain\UseCases\CrearAdministradorUseCase;
 use Features\Superadmin\Domain\UseCases\CrearProyectoYAsignarAdministradoresUseCase;
 use Features\Superadmin\Domain\UseCases\ListarAdministradoresUseCase;
@@ -28,6 +31,8 @@ final class SuperadminController extends Controller
         private readonly CrearAdministradorUseCase $crearAdministradorUseCase,
         private readonly CrearProyectoYAsignarAdministradoresUseCase $crearProyectoUseCase,
         private readonly ListarProyectosDelUsuarioUseCase $listarProyectosDelUsuarioUseCase,
+        private readonly BuscarProyectoUseCase $buscarProyectoUseCase,
+        private readonly ActualizarProyectoUseCase $actualizarProyectoUseCase,
     ) {}
 
     public function proyectos(): JsonResponse
@@ -66,6 +71,37 @@ final class SuperadminController extends Controller
         }
 
         return response()->json($this->serializarProyectoDetalle($proyecto), 201);
+    }
+
+    public function verProyecto(string $proyecto): JsonResponse
+    {
+        try {
+            $detalle = $this->buscarProyectoUseCase->execute($proyecto);
+        } catch (RecursoNoEncontradoException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 404);
+        }
+
+        return response()->json($this->serializarProyectoDetalle($detalle));
+    }
+
+    public function actualizarProyecto(ActualizarProyectoRequest $request, string $proyecto): JsonResponse
+    {
+        try {
+            $detalle = $this->actualizarProyectoUseCase->execute(
+                $proyecto,
+                $request->string('nombre')->toString(),
+                $request->input('descripcion'),
+                $request->input('modulos', []),
+                $request->input('instalaciones', []),
+                array_map('strval', $request->input('admin_ids', [])),
+            );
+        } catch (InvalidArgumentException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
+        } catch (RecursoNoEncontradoException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 404);
+        }
+
+        return response()->json($this->serializarProyectoDetalle($detalle));
     }
 
     public function misProyectos(): JsonResponse

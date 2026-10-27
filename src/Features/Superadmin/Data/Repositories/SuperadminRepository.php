@@ -141,6 +141,88 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
         return $this->toProyectoDetalle($proyecto->load('instalacionesExtra', 'administradores'));
     }
 
+    public function buscarProyecto(string $id): ProyectoDetalle
+    {
+        $proyecto = Proyecto::query()
+            ->with('instalacionesExtra', 'administradores')
+            ->find($id);
+
+        if ($proyecto === null) {
+            throw new RecursoNoEncontradoException('El proyecto no existe.');
+        }
+
+        return $this->toProyectoDetalle($proyecto);
+    }
+
+    public function actualizarProyecto(
+        string $id,
+        string $nombre,
+        ?string $descripcion,
+        array $modulos,
+        array $instalaciones,
+        array $administradoresIds,
+    ): ProyectoDetalle {
+        $proyecto = Proyecto::query()->find($id);
+
+        if ($proyecto === null) {
+            throw new RecursoNoEncontradoException('El proyecto no existe.');
+        }
+
+        $administradores = User::query()
+            ->whereIn('id', $administradoresIds)
+            ->where('rol', Rol::Administrador->value)
+            ->get();
+
+        if ($administradores->count() !== count($administradoresIds)) {
+            throw new RecursoNoEncontradoException('Uno o más administradores no existen o no tienen el rol correcto.');
+        }
+
+        DB::transaction(function () use (
+            $proyecto,
+            $nombre,
+            $descripcion,
+            $modulos,
+            $instalaciones,
+            $administradores,
+        ) {
+            $proyecto->update([
+                'nombre' => $nombre,
+                'descripcion' => $descripcion,
+                'modulos' => array_map(static fn (ModuloSistema $modulo) => $modulo->value, $modulos),
+            ]);
+
+            $existentes = $proyecto->instalacionesExtra()->get()->keyBy('nombre');
+            $nombresRecibidos = [];
+
+            foreach ($instalaciones as $instalacion) {
+                $nombresRecibidos[] = $instalacion['nombre'];
+                $existente = $existentes->get($instalacion['nombre']);
+
+                if ($existente !== null) {
+                    $existente->update(['tipo' => $instalacion['tipo'] ?? null]);
+
+                    continue;
+                }
+
+                $proyecto->instalacionesExtra()->create([
+                    'nombre' => $instalacion['nombre'],
+                    'tipo' => $instalacion['tipo'] ?? null,
+                    'atributos' => $instalacion['atributos'] ?? null,
+                ]);
+            }
+
+            $proyecto->instalacionesExtra()
+                ->whereNotIn('nombre', $nombresRecibidos)
+                ->delete();
+
+            $proyecto->administradores()->sync($administradores->modelKeys());
+        });
+
+        return $this->toProyectoDetalle(
+            $proyecto->refresh()->load('instalacionesExtra', 'administradores'),
+        );
+    }
+
     public function listarProyectosDelUsuario(string $usuarioId): array
     {
         $usuario = User::query()->find($usuarioId);
