@@ -9,6 +9,7 @@ final class UnidadAccesoria
         private readonly string $proyectoId,
         private readonly string $identificador,
         private readonly TipoUnidadAccesoria $tipo,
+        private readonly ?TipoAsignacion $asignacion,
         private readonly ?string $unidadPrincipalId,
     ) {}
 
@@ -30,6 +31,11 @@ final class UnidadAccesoria
     public function tipo(): TipoUnidadAccesoria
     {
         return $this->tipo;
+    }
+
+    public function asignacion(): ?TipoAsignacion
+    {
+        return $this->asignacion;
     }
 
     public function unidadPrincipalId(): ?string

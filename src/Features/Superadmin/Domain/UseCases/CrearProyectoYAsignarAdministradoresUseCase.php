@@ -3,11 +3,12 @@
 namespace Features\Superadmin\Domain\UseCases;
 
 use Features\Infraestructura\Domain\Entities\TipoAgrupacion;
+use Features\Infraestructura\Domain\Entities\TipoUnidadAccesoria;
 use Features\Infraestructura\Domain\UseCases\GeneradorIdentificacionesUnidades;
+use Features\Infraestructura\Domain\UseCases\GeneradorIdentificadoresAccesorias;
 use Features\Superadmin\Domain\Entities\ModuloSistema;
 use Features\Superadmin\Domain\Entities\ProyectoDetalle;
 use Features\Superadmin\Domain\Entities\TipoCondominio;
-use Features\Superadmin\Domain\Exceptions\AdministradorInvalidoException;
 use Features\Superadmin\Domain\Exceptions\RecursoNoEncontradoException;
 use Features\Superadmin\Domain\Repositories\SuperadminRepositoryInterface;
 use InvalidArgumentException;
@@ -17,6 +18,7 @@ final class CrearProyectoYAsignarAdministradoresUseCase
     public function __construct(
         private readonly SuperadminRepositoryInterface $repository,
         private readonly GeneradorIdentificacionesUnidades $generador,
+        private readonly GeneradorIdentificadoresAccesorias $generadorAccesorias,
     ) {}
 
     /**
@@ -27,10 +29,10 @@ final class CrearProyectoYAsignarAdministradoresUseCase
      * - torre/bloque/edificio: piso_desde, piso_hasta, unidades_por_piso (y prefijo opcional)
      * - manzana (casas): cantidad (y prefijo opcional, por defecto "Casa")
      *
-     * @param string[] $modulos
-     * @param array<int, array{nombre: string, tipo: string, prefijo?: ?string, piso_desde?: ?int, piso_hasta?: ?int, unidades_por_piso?: ?int, cantidad?: ?int}> $agrupaciones
-     * @param array<int, array{nombre: string, tipo?: ?string, atributos?: ?array<string, mixed>}> $instalaciones
-     * @param string[] $administradoresIds
+     * @param  string[]  $modulos
+     * @param  array<int, array{nombre: string, tipo: string, prefijo?: ?string, piso_desde?: ?int, piso_hasta?: ?int, unidades_por_piso?: ?int, cantidad?: ?int}>  $agrupaciones
+     * @param  array<int, array{nombre: string, tipo?: ?string, atributos?: ?array<string, mixed>}>  $instalaciones
+     * @param  string[]  $administradoresIds
      *
      * @throws InvalidArgumentException
      * @throws RecursoNoEncontradoException
@@ -43,6 +45,8 @@ final class CrearProyectoYAsignarAdministradoresUseCase
         array $agrupaciones,
         array $instalaciones,
         array $administradoresIds,
+        int $estacionamientos = 0,
+        int $bodegas = 0,
     ): ProyectoDetalle {
         $nombre = trim($nombre);
 
@@ -96,6 +100,36 @@ final class CrearProyectoYAsignarAdministradoresUseCase
             ];
         }
 
+        if ($estacionamientos < 0 || $estacionamientos > GeneradorIdentificadoresAccesorias::MAX_POR_LOTE) {
+            throw new InvalidArgumentException('La cantidad de estacionamientos debe estar entre 0 y '.GeneradorIdentificadoresAccesorias::MAX_POR_LOTE.'.');
+        }
+
+        if ($bodegas < 0 || $bodegas > GeneradorIdentificadoresAccesorias::MAX_POR_LOTE) {
+            throw new InvalidArgumentException('La cantidad de bodegas debe estar entre 0 y '.GeneradorIdentificadoresAccesorias::MAX_POR_LOTE.'.');
+        }
+
+        $accesorias = [];
+
+        if ($estacionamientos > 0) {
+            $accesorias[] = [
+                'tipo' => TipoUnidadAccesoria::Estacionamiento,
+                'identificadores' => $this->generadorAccesorias->generar(
+                    TipoUnidadAccesoria::Estacionamiento,
+                    $estacionamientos,
+                ),
+            ];
+        }
+
+        if ($bodegas > 0) {
+            $accesorias[] = [
+                'tipo' => TipoUnidadAccesoria::Bodega,
+                'identificadores' => $this->generadorAccesorias->generar(
+                    TipoUnidadAccesoria::Bodega,
+                    $bodegas,
+                ),
+            ];
+        }
+
         return $this->repository->crearProyectoConAdministradores(
             $nombre,
             $descripcion !== null ? trim($descripcion) : null,
@@ -104,12 +138,12 @@ final class CrearProyectoYAsignarAdministradoresUseCase
             $agrupacionesNormalizadas,
             $instalacionesNormalizadas,
             array_values(array_unique($administradoresIds)),
+            $accesorias,
         );
     }
 
     /**
-     * @param array<int, array<string, mixed>> $agrupaciones
-     *
+     * @param  array<int, array<string, mixed>>  $agrupaciones
      * @return array<int, array{nombre: string, tipo: TipoAgrupacion, identificadores: string[]}>
      */
     private function normalizarAgrupaciones(TipoCondominio $tipoCondominio, array $agrupaciones): array

@@ -63,6 +63,8 @@ final class SuperadminController extends Controller
                 $request->input('agrupaciones', []),
                 $request->input('instalaciones', []),
                 array_map('strval', $request->input('admin_ids', [])),
+                (int) $request->input('estacionamientos', 0),
+                (int) $request->input('bodegas', 0),
             );
         } catch (InvalidArgumentException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);

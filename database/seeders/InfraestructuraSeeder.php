@@ -48,13 +48,14 @@ final class InfraestructuraSeeder extends Seeder
             ->first();
 
         $torre->unidadesPrincipales()->orderBy('id')->first()->unidadesAccesorias()->createMany([
-            ['proyecto_id' => $proyecto->getKey(), 'identificador' => 'E-101', 'tipo' => 'estacionamiento'],
-            ['proyecto_id' => $proyecto->getKey(), 'identificador' => 'B-101', 'tipo' => 'bodega'],
+            ['proyecto_id' => $proyecto->getKey(), 'identificador' => 'E-101', 'tipo' => 'estacionamiento', 'asignacion' => 'departamento'],
+            ['proyecto_id' => $proyecto->getKey(), 'identificador' => 'B-101', 'tipo' => 'bodega', 'asignacion' => 'departamento'],
         ]);
 
         $proyecto->unidadesAccesorias()->createMany([
-            ['proyecto_id' => $proyecto->getKey(), 'unidad_principal_id' => $primeraCasa?->getKey(), 'identificador' => 'E-201', 'tipo' => 'estacionamiento'],
-            ['proyecto_id' => $proyecto->getKey(), 'identificador' => 'V-001', 'tipo' => 'bodega'],
+            ['proyecto_id' => $proyecto->getKey(), 'unidad_principal_id' => $primeraCasa?->getKey(), 'identificador' => 'E-201', 'tipo' => 'estacionamiento', 'asignacion' => 'departamento'],
+            ['proyecto_id' => $proyecto->getKey(), 'identificador' => 'V-001', 'tipo' => 'bodega', 'asignacion' => 'visita'],
+            ['proyecto_id' => $proyecto->getKey(), 'identificador' => 'B-201', 'tipo' => 'bodega', 'asignacion' => 'otro'],
         ]);
     }
 }

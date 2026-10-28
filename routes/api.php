@@ -30,6 +30,7 @@ Route::middleware(['auth:sanctum', 'role:administrador,superadmin'])->prefix('in
     Route::post('proyectos', [InfraestructuraController::class, 'crearProyecto']);
     Route::post('agrupaciones', [InfraestructuraController::class, 'crearAgrupacion']);
     Route::post('unidades-accesorias', [InfraestructuraController::class, 'crearUnidadAccesoria']);
+    Route::post('unidades-accesorias/lote', [InfraestructuraController::class, 'crearUnidadesAccesoriasEnLote']);
     Route::patch('unidades-accesorias/{unidadAccesoriaId}/asignacion', [InfraestructuraController::class, 'asignarUnidadAccesoria']);
     Route::get('arbol', [InfraestructuraController::class, 'arbol']);
     Route::post('vista-previa-identificaciones', [InfraestructuraController::class, 'vistaPreviaIdentificaciones']);

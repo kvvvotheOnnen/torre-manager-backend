@@ -17,6 +17,7 @@ class AsignarUnidadAccesoriaRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'asignacion' => ['nullable', 'string', 'in:departamento,visita,otro'],
             'unidad_principal_id' => ['nullable', 'integer', 'exists:unidades_principales,id'],
         ];
     }

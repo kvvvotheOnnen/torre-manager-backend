@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\UnidadAccesoriaFactory;
+use Features\Infraestructura\Domain\Entities\TipoAsignacion;
 use Features\Infraestructura\Domain\Entities\TipoUnidadAccesoria;
 use Features\Infraestructura\Domain\Entities\UnidadAccesoria as UnidadAccesoriaEntity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,7 @@ class UnidadAccesoria extends Model
 
     protected $table = 'unidades_accesorias';
 
-    protected $fillable = ['proyecto_id', 'unidad_principal_id', 'identificador', 'tipo'];
+    protected $fillable = ['proyecto_id', 'unidad_principal_id', 'identificador', 'tipo', 'asignacion'];
 
     public function proyecto(): BelongsTo
     {
@@ -35,6 +36,7 @@ class UnidadAccesoria extends Model
             proyectoId: (string) $this->proyecto_id,
             identificador: $this->identificador,
             tipo: TipoUnidadAccesoria::from($this->tipo),
+            asignacion: $this->asignacion !== null ? TipoAsignacion::from($this->asignacion) : null,
             unidadPrincipalId: $this->unidad_principal_id !== null ? (string) $this->unidad_principal_id : null,
         );
     }

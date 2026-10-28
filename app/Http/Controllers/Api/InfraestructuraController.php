@@ -6,11 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Infraestructura\AsignarUnidadAccesoriaRequest;
 use App\Http\Requests\Infraestructura\CrearProyectoRequest;
 use App\Http\Requests\Infraestructura\CrearUnidadAccesoriaRequest;
+use App\Http\Requests\Infraestructura\CrearUnidadesAccesoriasLoteRequest;
 use App\Http\Requests\Infraestructura\RegistrarAgrupacionRequest;
+use Features\Infraestructura\Domain\Entities\Agrupacion;
 use Features\Infraestructura\Domain\Entities\ArbolAgrupacion;
 use Features\Infraestructura\Domain\Entities\ArbolInfraestructura;
 use Features\Infraestructura\Domain\Entities\ArbolUnidadPrincipal;
-use Features\Infraestructura\Domain\Entities\Agrupacion;
 use Features\Infraestructura\Domain\Entities\Proyecto;
 use Features\Infraestructura\Domain\Entities\UnidadAccesoria;
 use Features\Infraestructura\Domain\Entities\UnidadPrincipal;
@@ -19,6 +20,7 @@ use Features\Infraestructura\Domain\Exceptions\RecursoNoEncontradoException;
 use Features\Infraestructura\Domain\UseCases\AsignarUnidadAccesoriaUseCase;
 use Features\Infraestructura\Domain\UseCases\CrearProyectoUseCase;
 use Features\Infraestructura\Domain\UseCases\CrearUnidadAccesoriaUseCase;
+use Features\Infraestructura\Domain\UseCases\CrearUnidadesAccesoriasEnLoteUseCase;
 use Features\Infraestructura\Domain\UseCases\GeneradorIdentificacionesUnidades;
 use Features\Infraestructura\Domain\UseCases\ObtenerArbolInfraestructuraUseCase;
 use Features\Infraestructura\Domain\UseCases\RegistrarAgrupacionEnCascadaUseCase;
@@ -33,6 +35,7 @@ final class InfraestructuraController extends Controller
         private readonly CrearProyectoUseCase $crearProyectoUseCase,
         private readonly RegistrarAgrupacionEnCascadaUseCase $registrarAgrupacionEnCascadaUseCase,
         private readonly CrearUnidadAccesoriaUseCase $crearUnidadAccesoriaUseCase,
+        private readonly CrearUnidadesAccesoriasEnLoteUseCase $crearUnidadesAccesoriasEnLoteUseCase,
         private readonly AsignarUnidadAccesoriaUseCase $asignarUnidadAccesoriaUseCase,
         private readonly ObtenerArbolInfraestructuraUseCase $obtenerArbolUseCase,
         private readonly ResolverProyectoActivoUseCase $resolverProyectoActivoUseCase,
@@ -105,6 +108,7 @@ final class InfraestructuraController extends Controller
                 )->id(),
                 $request->string('identificador')->toString(),
                 $request->string('tipo')->toString(),
+                $this->asignacionSolicitada($request),
                 $request->input('unidad_principal_id'),
             );
         } catch (InvalidArgumentException $exception) {
@@ -118,13 +122,45 @@ final class InfraestructuraController extends Controller
         return response()->json($this->serializarUnidadAccesoria($unidad), 201);
     }
 
+    public function crearUnidadesAccesoriasEnLote(CrearUnidadesAccesoriasLoteRequest $request): JsonResponse
+    {
+        try {
+            $unidades = $this->crearUnidadesAccesoriasEnLoteUseCase->execute(
+                $this->resolverProyectoActivoUseCase->execute(
+                    (string) auth()->id(),
+                    $this->proyectoIdSolicitado($request),
+                )->id(),
+                $request->string('tipo')->toString(),
+                (int) $request->input('cantidad'),
+                $this->asignacionSolicitada($request),
+                $request->input('unidad_principal_id'),
+            );
+        } catch (InvalidArgumentException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
+        } catch (RecursoDuplicadoException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 409);
+        } catch (RecursoNoEncontradoException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 404);
+        }
+
+        return response()->json([
+            'unidades' => array_map(
+                fn (UnidadAccesoria $unidad) => $this->serializarUnidadAccesoria($unidad),
+                $unidades,
+            ),
+        ], 201);
+    }
+
     public function asignarUnidadAccesoria(AsignarUnidadAccesoriaRequest $request, string $unidadAccesoriaId): JsonResponse
     {
         try {
             $unidad = $this->asignarUnidadAccesoriaUseCase->execute(
                 $unidadAccesoriaId,
+                $this->asignacionSolicitada($request),
                 $request->input('unidad_principal_id'),
             );
+        } catch (InvalidArgumentException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
         } catch (RecursoNoEncontradoException $exception) {
             return response()->json(['message' => $exception->getMessage()], 404);
         }
@@ -169,6 +205,17 @@ final class InfraestructuraController extends Controller
         return $request->header('X-Proyecto-Id') ?? $request->input('proyecto_id');
     }
 
+    private function asignacionSolicitada(Request $request): ?string
+    {
+        $asignacion = $request->input('asignacion');
+
+        if (is_string($asignacion) && $asignacion !== '') {
+            return $asignacion;
+        }
+
+        return $request->input('unidad_principal_id') !== null ? 'departamento' : null;
+    }
+
     private function serializarProyecto(Proyecto $proyecto): array
     {
         return [
@@ -204,6 +251,7 @@ final class InfraestructuraController extends Controller
             'proyecto_id' => $unidad->proyectoId(),
             'identificador' => $unidad->identificador(),
             'tipo' => $unidad->tipo()->value,
+            'asignacion' => $unidad->asignacion()?->value,
             'unidad_principal_id' => $unidad->unidadPrincipalId(),
         ];
     }
@@ -212,6 +260,10 @@ final class InfraestructuraController extends Controller
     {
         return [
             'proyecto' => $this->serializarProyecto($arbol->proyecto()),
+            'unidades_accesorias' => array_map(
+                fn (UnidadAccesoria $accesoria) => $this->serializarUnidadAccesoria($accesoria),
+                $arbol->unidadesAccesorias(),
+            ),
             'agrupaciones' => array_map(
                 fn (ArbolAgrupacion $arbolAgrupacion): array => [
                     ...$this->serializarAgrupacion($arbolAgrupacion->agrupacion()),

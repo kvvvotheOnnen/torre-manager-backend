@@ -2,11 +2,11 @@
 
 namespace Features\Superadmin\Data\Repositories;
 
+use App\Models\InstalacionExtra;
 use App\Models\Proyecto;
 use App\Models\User;
 use Features\Auth\Domain\Entities\Rol;
 use Features\Superadmin\Domain\Entities\Administrador;
-use Features\Superadmin\Domain\Entities\InstalacionExtra;
 use Features\Superadmin\Domain\Entities\ModuloSistema;
 use Features\Superadmin\Domain\Entities\ProyectoDetalle;
 use Features\Superadmin\Domain\Entities\ResumenProyecto;
@@ -85,6 +85,7 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
         array $agrupaciones,
         array $instalaciones,
         array $administradoresIds,
+        array $accesorias,
     ): ProyectoDetalle {
         $administradores = User::query()
             ->whereIn('id', $administradoresIds)
@@ -103,6 +104,7 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
             $agrupaciones,
             $instalaciones,
             $administradores,
+            $accesorias,
         ) {
             $proyecto = Proyecto::create([
                 'nombre' => $nombre,
@@ -131,6 +133,20 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
                     'tipo' => $instalacion['tipo'] ?? null,
                     'atributos' => $instalacion['atributos'] ?? null,
                 ]);
+            }
+
+            foreach ($accesorias as $grupo) {
+                $proyecto->unidadesAccesorias()->createMany(
+                    array_map(
+                        static fn (string $identificador) => [
+                            'identificador' => $identificador,
+                            'tipo' => $grupo['tipo']->value,
+                            'asignacion' => null,
+                            'unidad_principal_id' => null,
+                        ],
+                        $grupo['identificadores'],
+                    ),
+                );
             }
 
             $proyecto->administradores()->sync($administradores->modelKeys());
@@ -255,7 +271,7 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
                 $proyecto->modulos ?? [],
             ),
             instalacionesExtra: $proyecto->instalacionesExtra
-                ->map(static fn (\App\Models\InstalacionExtra $instalacion) => $instalacion->toEntity())
+                ->map(static fn (InstalacionExtra $instalacion) => $instalacion->toEntity())
                 ->all(),
             administradoresIds: $proyecto->administradores
                 ->map(static fn (User $user) => (string) $user->getKey())

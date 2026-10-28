@@ -37,6 +37,9 @@ class CrearProyectoRequest extends FormRequest
             'instalaciones.*.tipo' => ['nullable', 'string', 'max:100'],
             'instalaciones.*.atributos' => ['nullable', 'array'],
 
+            'estacionamientos' => ['nullable', 'integer', 'min:0', 'max:999'],
+            'bodegas' => ['nullable', 'integer', 'min:0', 'max:999'],
+
             'admin_ids' => ['required', 'array', 'min:1'],
             'admin_ids.*' => ['integer'],
         ];

@@ -6,6 +6,7 @@ use Features\Infraestructura\Domain\Entities\Agrupacion;
 use Features\Infraestructura\Domain\Entities\ArbolInfraestructura;
 use Features\Infraestructura\Domain\Entities\Proyecto;
 use Features\Infraestructura\Domain\Entities\TipoAgrupacion;
+use Features\Infraestructura\Domain\Entities\TipoAsignacion;
 use Features\Infraestructura\Domain\Entities\TipoUnidadAccesoria;
 use Features\Infraestructura\Domain\Entities\UnidadAccesoria;
 use Features\Infraestructura\Domain\Entities\UnidadPrincipal;
@@ -34,7 +35,7 @@ interface InfraestructuraRepositoryInterface
     public function obtenerProyectoActivo(string $usuarioId, ?string $proyectoIdSolicitado): Proyecto;
 
     /**
-     * @param UnidadPrincipal[] $unidades
+     * @param  UnidadPrincipal[]  $unidades
      *
      * @throws RecursoDuplicadoException
      */
@@ -45,13 +46,45 @@ interface InfraestructuraRepositoryInterface
      */
     public function listarAgrupaciones(string $proyectoId): array;
 
-    /** @throws RecursoNoEncontradoException */
-    public function crearUnidadAccesoria(string $proyectoId, string $identificador, TipoUnidadAccesoria $tipo, ?string $unidadPrincipalId): UnidadAccesoria;
+    /**
+     * @throws RecursoNoEncontradoException
+     */
+    public function crearUnidadAccesoria(
+        string $proyectoId,
+        string $identificador,
+        TipoUnidadAccesoria $tipo,
+        ?TipoAsignacion $asignacion,
+        ?string $unidadPrincipalId,
+    ): UnidadAccesoria;
 
     /**
      * @throws RecursoNoEncontradoException
      */
-    public function asignarUnidadAccesoria(string $unidadAccesoriaId, ?string $unidadPrincipalId): UnidadAccesoria;
+    public function asignarUnidadAccesoria(
+        string $unidadAccesoriaId,
+        ?TipoAsignacion $asignacion,
+        ?string $unidadPrincipalId,
+    ): UnidadAccesoria;
+
+    /**
+     * @return string[]
+     */
+    public function listarIdentificadoresAccesorias(string $proyectoId, TipoUnidadAccesoria $tipo): array;
+
+    /**
+     * @param  string[]  $identificadores
+     * @return UnidadAccesoria[]
+     *
+     * @throws RecursoDuplicadoException
+     * @throws RecursoNoEncontradoException
+     */
+    public function crearUnidadesAccesoriasEnLote(
+        string $proyectoId,
+        TipoUnidadAccesoria $tipo,
+        array $identificadores,
+        ?TipoAsignacion $asignacion,
+        ?string $unidadPrincipalId,
+    ): array;
 
     /** @throws RecursoNoEncontradoException */
     public function obtenerArbol(string $proyectoId): ArbolInfraestructura;

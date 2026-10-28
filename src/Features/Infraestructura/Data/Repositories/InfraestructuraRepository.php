@@ -13,6 +13,7 @@ use Features\Infraestructura\Domain\Entities\ArbolInfraestructura;
 use Features\Infraestructura\Domain\Entities\ArbolUnidadPrincipal;
 use Features\Infraestructura\Domain\Entities\Proyecto as ProyectoEntity;
 use Features\Infraestructura\Domain\Entities\TipoAgrupacion;
+use Features\Infraestructura\Domain\Entities\TipoAsignacion;
 use Features\Infraestructura\Domain\Entities\TipoUnidadAccesoria;
 use Features\Infraestructura\Domain\Entities\UnidadAccesoria as UnidadAccesoriaEntity;
 use Features\Infraestructura\Domain\Entities\UnidadPrincipal as UnidadPrincipalEntity;
@@ -63,7 +64,7 @@ final class InfraestructuraRepository implements InfraestructuraRepositoryInterf
 
     public function obtenerProyectoDelUsuario(string $usuarioId): ProyectoEntity
     {
-        $usuario = \App\Models\User::query()->with('proyecto')->find($usuarioId);
+        $usuario = User::query()->with('proyecto')->find($usuarioId);
 
         if ($usuario === null || $usuario->proyecto === null) {
             throw new RecursoNoEncontradoException('El usuario no tiene un proyecto asignado.');
@@ -193,17 +194,18 @@ final class InfraestructuraRepository implements InfraestructuraRepositoryInterf
             ->all();
     }
 
-    public function crearUnidadAccesoria(string $proyectoId, string $identificador, TipoUnidadAccesoria $tipo, ?string $unidadPrincipalId): UnidadAccesoriaEntity
-    {
-        if ($unidadPrincipalId !== null) {
-            $unidadPrincipal = UnidadPrincipal::query()
-                ->whereHas('agrupacion', static fn ($query) => $query->where('proyecto_id', $proyectoId))
-                ->find($unidadPrincipalId);
-
-            if ($unidadPrincipal === null) {
-                throw new RecursoNoEncontradoException('La unidad principal indicada no existe en el proyecto.');
-            }
-        }
+    public function crearUnidadAccesoria(
+        string $proyectoId,
+        string $identificador,
+        TipoUnidadAccesoria $tipo,
+        ?TipoAsignacion $asignacion,
+        ?string $unidadPrincipalId,
+    ): UnidadAccesoriaEntity {
+        $unidadPrincipalId = $this->resolverUnidadPrincipal(
+            $proyectoId,
+            $asignacion,
+            $unidadPrincipalId,
+        );
 
         try {
             $unidadAccesoria = UnidadAccesoria::create([
@@ -211,6 +213,7 @@ final class InfraestructuraRepository implements InfraestructuraRepositoryInterf
                 'unidad_principal_id' => $unidadPrincipalId,
                 'identificador' => $identificador,
                 'tipo' => $tipo->value,
+                'asignacion' => $asignacion?->value,
             ]);
         } catch (QueryException $exception) {
             Log::error('No fue posible crear la unidad accesoria.', ['exception' => $exception->getMessage()]);
@@ -221,27 +224,122 @@ final class InfraestructuraRepository implements InfraestructuraRepositoryInterf
         return $unidadAccesoria->toEntity();
     }
 
-    public function asignarUnidadAccesoria(string $unidadAccesoriaId, ?string $unidadPrincipalId): UnidadAccesoriaEntity
-    {
+    public function asignarUnidadAccesoria(
+        string $unidadAccesoriaId,
+        ?TipoAsignacion $asignacion,
+        ?string $unidadPrincipalId,
+    ): UnidadAccesoriaEntity {
         $unidadAccesoria = UnidadAccesoria::find($unidadAccesoriaId);
 
         if ($unidadAccesoria === null) {
             throw new RecursoNoEncontradoException('La unidad accesoria no existe.');
         }
 
-        if ($unidadPrincipalId !== null) {
-            $unidadPrincipal = UnidadPrincipal::query()
-                ->whereHas('agrupacion', static fn ($query) => $query->where('proyecto_id', $unidadAccesoria->proyecto_id))
-                ->find($unidadPrincipalId);
+        $unidadPrincipalId = $this->resolverUnidadPrincipal(
+            (string) $unidadAccesoria->proyecto_id,
+            $asignacion,
+            $unidadPrincipalId,
+        );
 
-            if ($unidadPrincipal === null) {
-                throw new RecursoNoEncontradoException('La unidad principal indicada no existe en el proyecto.');
-            }
-        }
-
-        $unidadAccesoria->update(['unidad_principal_id' => $unidadPrincipalId]);
+        $unidadAccesoria->update([
+            'unidad_principal_id' => $unidadPrincipalId,
+            'asignacion' => $asignacion?->value,
+        ]);
 
         return $unidadAccesoria->refresh()->toEntity();
+    }
+
+    public function listarIdentificadoresAccesorias(string $proyectoId, TipoUnidadAccesoria $tipo): array
+    {
+        return UnidadAccesoria::query()
+            ->where('proyecto_id', $proyectoId)
+            ->where('tipo', $tipo->value)
+            ->pluck('identificador')
+            ->map(static fn ($identificador) => (string) $identificador)
+            ->all();
+    }
+
+    public function crearUnidadesAccesoriasEnLote(
+        string $proyectoId,
+        TipoUnidadAccesoria $tipo,
+        array $identificadores,
+        ?TipoAsignacion $asignacion,
+        ?string $unidadPrincipalId,
+    ): array {
+        $proyecto = Proyecto::query()->find($proyectoId);
+
+        if ($proyecto === null) {
+            throw new RecursoNoEncontradoException('El proyecto no existe.');
+        }
+
+        $unidadPrincipalId = $this->resolverUnidadPrincipal(
+            $proyectoId,
+            $asignacion,
+            $unidadPrincipalId,
+        );
+
+        if ($identificadores === []) {
+            return [];
+        }
+
+        try {
+            $unidades = DB::transaction(function () use (
+                $proyecto,
+                $tipo,
+                $identificadores,
+                $asignacion,
+                $unidadPrincipalId,
+            ) {
+                $proyecto->unidadesAccesorias()->createMany(
+                    array_map(
+                        static fn (string $identificador) => [
+                            'identificador' => $identificador,
+                            'tipo' => $tipo->value,
+                            'asignacion' => $asignacion?->value,
+                            'unidad_principal_id' => $unidadPrincipalId,
+                        ],
+                        $identificadores,
+                    ),
+                );
+
+                return UnidadAccesoria::query()
+                    ->where('proyecto_id', $proyecto->getKey())
+                    ->where('tipo', $tipo->value)
+                    ->whereIn('identificador', $identificadores)
+                    ->orderBy('identificador')
+                    ->get();
+            });
+        } catch (QueryException $exception) {
+            Log::error('No fue posible crear las unidades accesorias en lote.', ['exception' => $exception->getMessage()]);
+
+            throw new RecursoDuplicadoException('No fue posible crear las unidades accesorias: identificadores duplicados.');
+        }
+
+        return $unidades->map(static fn (UnidadAccesoria $unidad) => $unidad->toEntity())->all();
+    }
+
+    private function resolverUnidadPrincipal(
+        string $proyectoId,
+        ?TipoAsignacion $asignacion,
+        ?string $unidadPrincipalId,
+    ): ?string {
+        if ($asignacion !== TipoAsignacion::Departamento) {
+            return null;
+        }
+
+        if ($unidadPrincipalId === null) {
+            throw new RecursoNoEncontradoException('La unidad principal indicada no existe en el proyecto.');
+        }
+
+        $unidadPrincipal = UnidadPrincipal::query()
+            ->whereHas('agrupacion', static fn ($query) => $query->where('proyecto_id', $proyectoId))
+            ->find($unidadPrincipalId);
+
+        if ($unidadPrincipal === null) {
+            throw new RecursoNoEncontradoException('La unidad principal indicada no existe en el proyecto.');
+        }
+
+        return (string) $unidadPrincipal->getKey();
     }
 
     public function obtenerArbol(string $proyectoId): ArbolInfraestructura
@@ -275,6 +373,17 @@ final class InfraestructuraRepository implements InfraestructuraRepositoryInterf
             })
             ->all();
 
-        return new ArbolInfraestructura($proyecto->toEntity(), $agrupaciones);
+        $unidadesAccesorias = $proyecto->unidadesAccesorias()
+            ->orderBy('tipo')
+            ->orderBy('identificador')
+            ->get()
+            ->map(static fn (UnidadAccesoria $accesoria) => $accesoria->toEntity())
+            ->all();
+
+        return new ArbolInfraestructura(
+            $proyecto->toEntity(),
+            $agrupaciones,
+            $unidadesAccesorias,
+        );
     }
 }

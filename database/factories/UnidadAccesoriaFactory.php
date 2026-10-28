@@ -19,6 +19,7 @@ class UnidadAccesoriaFactory extends Factory
             'unidad_principal_id' => null,
             'identificador' => (string) fake()->unique()->numberBetween(1, 200),
             'tipo' => TipoUnidadAccesoria::Estacionamiento->value,
+            'asignacion' => null,
         ];
     }
 

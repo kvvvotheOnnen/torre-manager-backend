@@ -19,6 +19,7 @@ class CrearUnidadAccesoriaRequest extends FormRequest
         return [
             'identificador' => ['required', 'string', 'max:255'],
             'tipo' => ['required', 'string', 'in:estacionamiento,bodega'],
+            'asignacion' => ['nullable', 'string', 'in:departamento,visita,otro'],
             'unidad_principal_id' => ['nullable', 'integer', 'exists:unidades_principales,id'],
         ];
     }

@@ -2,11 +2,13 @@
 
 namespace Features\Superadmin\Domain\Repositories;
 
+use Features\Infraestructura\Domain\Entities\TipoAgrupacion;
+use Features\Infraestructura\Domain\Entities\TipoUnidadAccesoria;
 use Features\Superadmin\Domain\Entities\Administrador;
+use Features\Superadmin\Domain\Entities\ModuloSistema;
 use Features\Superadmin\Domain\Entities\ProyectoDetalle;
 use Features\Superadmin\Domain\Entities\ResumenProyecto;
 use Features\Superadmin\Domain\Entities\TipoCondominio;
-use Features\Superadmin\Domain\Entities\ModuloSistema;
 use Features\Superadmin\Domain\Exceptions\EmailDuplicadoException;
 use Features\Superadmin\Domain\Exceptions\RecursoNoEncontradoException;
 
@@ -37,10 +39,11 @@ interface SuperadminRepositoryInterface
      * Crea un proyecto (tenant) con su estructura de infraestructura y anexa a
      * los administradores indicados.
      *
-     * @param ModuloSistema[] $modulos
-     * @param array<int, array{nombre: string, tipo: \Features\Infraestructura\Domain\Entities\TipoAgrupacion, identificadores: string[]}> $agrupaciones
-     * @param array<int, array{nombre: string, tipo?: ?string, atributos?: ?array<string, mixed>}> $instalaciones
-     * @param string[] $administradoresIds
+     * @param  ModuloSistema[]  $modulos
+     * @param  array<int, array{nombre: string, tipo: TipoAgrupacion, identificadores: string[]}>  $agrupaciones
+     * @param  array<int, array{nombre: string, tipo?: ?string, atributos?: ?array<string, mixed>}>  $instalaciones
+     * @param  string[]  $administradoresIds
+     * @param  array<int, array{tipo: TipoUnidadAccesoria, identificadores: string[]}>  $accesorias
      *
      * @throws RecursoNoEncontradoException
      */
@@ -52,6 +55,7 @@ interface SuperadminRepositoryInterface
         array $agrupaciones,
         array $instalaciones,
         array $administradoresIds,
+        array $accesorias,
     ): ProyectoDetalle;
 
     /**
@@ -65,9 +69,9 @@ interface SuperadminRepositoryInterface
      * Actualiza los datos editables de un proyecto (tenant) y su asociación
      * con administradores.
      *
-     * @param ModuloSistema[] $modulos
-     * @param array<int, array{nombre: string, tipo?: ?string, atributos?: ?array<string, mixed>}> $instalaciones
-     * @param string[] $administradoresIds
+     * @param  ModuloSistema[]  $modulos
+     * @param  array<int, array{nombre: string, tipo?: ?string, atributos?: ?array<string, mixed>}>  $instalaciones
+     * @param  string[]  $administradoresIds
      *
      * @throws RecursoNoEncontradoException
      */
