@@ -31,7 +31,7 @@ final class CrearProyectoYAsignarAdministradoresUseCase
      *
      * @param  string[]  $modulos
      * @param  array<int, array{nombre: string, tipo: string, prefijo?: ?string, piso_desde?: ?int, piso_hasta?: ?int, unidades_por_piso?: ?int, cantidad?: ?int}>  $agrupaciones
-     * @param  array<int, array{nombre: string, tipo?: ?string, atributos?: ?array<string, mixed>}>  $instalaciones
+     * @param  array<int, array{nombre: string, capacidad: int, descripcion?: ?string, atributos?: ?array<string, mixed>}>  $instalaciones
      * @param  string[]  $administradoresIds
      *
      * @throws InvalidArgumentException
@@ -93,9 +93,24 @@ final class CrearProyectoYAsignarAdministradoresUseCase
                 throw new InvalidArgumentException('Cada instalación extra debe tener un nombre.');
             }
 
+            $capacidad = (int) ($instalacion['capacidad'] ?? 0);
+
+            if ($capacidad < 1 || $capacidad > 500) {
+                throw new InvalidArgumentException("La capacidad de '{$nombreInstalacion}' debe estar entre 1 y 500.");
+            }
+
+            $descripcion = $instalacion['descripcion'] ?? null;
+            $descripcion = is_string($descripcion) ? trim($descripcion) : null;
+            $descripcion = $descripcion !== '' ? $descripcion : null;
+
+            if ($descripcion !== null && mb_strlen($descripcion) > 100) {
+                throw new InvalidArgumentException("La descripción de '{$nombreInstalacion}' no puede superar 100 caracteres.");
+            }
+
             $instalacionesNormalizadas[] = [
                 'nombre' => $nombreInstalacion,
-                'tipo' => $instalacion['tipo'] ?? null,
+                'capacidad' => $capacidad,
+                'descripcion' => $descripcion,
                 'atributos' => $instalacion['atributos'] ?? null,
             ];
         }

@@ -15,11 +15,12 @@ class InstalacionExtra extends Model
 
     protected $table = 'instalaciones_extra';
 
-    protected $fillable = ['proyecto_id', 'nombre', 'tipo', 'atributos'];
+    protected $fillable = ['proyecto_id', 'nombre', 'capacidad', 'descripcion', 'atributos'];
 
     protected function casts(): array
     {
         return [
+            'capacidad' => 'integer',
             'atributos' => 'array',
         ];
     }
@@ -35,7 +36,8 @@ class InstalacionExtra extends Model
             id: (string) $this->getKey(),
             proyectoId: (string) $this->proyecto_id,
             nombre: $this->nombre,
-            tipo: $this->tipo,
+            capacidad: (int) $this->capacidad,
+            descripcion: $this->descripcion,
             atributos: $this->atributos ?? [],
         );
     }

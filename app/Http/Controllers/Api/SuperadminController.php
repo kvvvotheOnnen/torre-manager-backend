@@ -174,7 +174,8 @@ final class SuperadminController extends Controller
                 static fn (InstalacionExtra $instalacion) => [
                     'id' => $instalacion->id(),
                     'nombre' => $instalacion->nombre(),
-                    'tipo' => $instalacion->tipo(),
+                    'capacidad' => $instalacion->capacidad(),
+                    'descripcion' => $instalacion->descripcion(),
                     'atributos' => $instalacion->atributos() === [] ? (object) [] : $instalacion->atributos(),
                 ],
                 $proyecto->instalacionesExtra(),

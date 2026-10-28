@@ -15,12 +15,11 @@ class InstalacionExtraFactory extends Factory
 
     public function definition(): array
     {
-        $tipos = ['quincho', 'piscina', 'gimnasio', 'sala_multiuso'];
-
         return [
             'proyecto_id' => Proyecto::factory(),
             'nombre' => fake()->unique()->randomElement(['Quincho', 'Piscina', 'Gimnasio', 'Sala Multiuso']),
-            'tipo' => fake()->randomElement($tipos),
+            'capacidad' => fake()->numberBetween(10, 60),
+            'descripcion' => fake()->optional(0.7)->words(6, true),
             'atributos' => null,
         ];
     }

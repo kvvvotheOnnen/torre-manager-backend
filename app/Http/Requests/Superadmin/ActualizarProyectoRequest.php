@@ -24,7 +24,8 @@ class ActualizarProyectoRequest extends FormRequest
 
             'instalaciones' => ['nullable', 'array'],
             'instalaciones.*.nombre' => ['required_with:instalaciones', 'string', 'max:255', 'distinct'],
-            'instalaciones.*.tipo' => ['nullable', 'string', 'max:100'],
+            'instalaciones.*.capacidad' => ['required_with:instalaciones', 'integer', 'min:1', 'max:500'],
+            'instalaciones.*.descripcion' => ['nullable', 'string', 'max:100'],
             'instalaciones.*.atributos' => ['nullable', 'array'],
 
             'admin_ids' => ['required', 'array', 'min:1'],

@@ -130,7 +130,8 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
             foreach ($instalaciones as $instalacion) {
                 $proyecto->instalacionesExtra()->create([
                     'nombre' => $instalacion['nombre'],
-                    'tipo' => $instalacion['tipo'] ?? null,
+                    'capacidad' => $instalacion['capacidad'],
+                    'descripcion' => $instalacion['descripcion'] ?? null,
                     'atributos' => $instalacion['atributos'] ?? null,
                 ]);
             }
@@ -215,14 +216,18 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
                 $existente = $existentes->get($instalacion['nombre']);
 
                 if ($existente !== null) {
-                    $existente->update(['tipo' => $instalacion['tipo'] ?? null]);
+                    $existente->update([
+                        'capacidad' => $instalacion['capacidad'],
+                        'descripcion' => $instalacion['descripcion'] ?? null,
+                    ]);
 
                     continue;
                 }
 
                 $proyecto->instalacionesExtra()->create([
                     'nombre' => $instalacion['nombre'],
-                    'tipo' => $instalacion['tipo'] ?? null,
+                    'capacidad' => $instalacion['capacidad'],
+                    'descripcion' => $instalacion['descripcion'] ?? null,
                     'atributos' => $instalacion['atributos'] ?? null,
                 ]);
             }

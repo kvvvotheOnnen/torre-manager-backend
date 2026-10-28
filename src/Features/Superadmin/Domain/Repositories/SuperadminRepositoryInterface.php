@@ -41,7 +41,7 @@ interface SuperadminRepositoryInterface
      *
      * @param  ModuloSistema[]  $modulos
      * @param  array<int, array{nombre: string, tipo: TipoAgrupacion, identificadores: string[]}>  $agrupaciones
-     * @param  array<int, array{nombre: string, tipo?: ?string, atributos?: ?array<string, mixed>}>  $instalaciones
+     * @param  array<int, array{nombre: string, capacidad: int, descripcion?: ?string, atributos?: ?array<string, mixed>}>  $instalaciones
      * @param  string[]  $administradoresIds
      * @param  array<int, array{tipo: TipoUnidadAccesoria, identificadores: string[]}>  $accesorias
      *
@@ -70,7 +70,7 @@ interface SuperadminRepositoryInterface
      * con administradores.
      *
      * @param  ModuloSistema[]  $modulos
-     * @param  array<int, array{nombre: string, tipo?: ?string, atributos?: ?array<string, mixed>}>  $instalaciones
+     * @param  array<int, array{nombre: string, capacidad: int, descripcion?: ?string, atributos?: ?array<string, mixed>}>  $instalaciones
      * @param  string[]  $administradoresIds
      *
      * @throws RecursoNoEncontradoException

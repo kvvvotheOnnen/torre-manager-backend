@@ -15,7 +15,10 @@ final class InfraestructuraSeeder extends Seeder
 
         $proyecto->instalacionesExtra()->firstOrCreate(
             ['nombre' => 'Quincho Comunitario'],
-            ['tipo' => 'quincho'],
+            [
+                'capacidad' => 40,
+                'descripcion' => 'Espacio para reuniones y eventos del condominio.',
+            ],
         );
 
         $torre = Agrupacion::factory()->for($proyecto)->create([

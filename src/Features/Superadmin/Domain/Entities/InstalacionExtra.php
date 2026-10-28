@@ -5,13 +5,14 @@ namespace Features\Superadmin\Domain\Entities;
 final class InstalacionExtra
 {
     /**
-     * @param array<string, mixed> $atributos
+     * @param  array<string, mixed>  $atributos
      */
     public function __construct(
         private readonly string $id,
         private readonly string $proyectoId,
         private readonly string $nombre,
-        private readonly ?string $tipo,
+        private readonly int $capacidad,
+        private readonly ?string $descripcion,
         private readonly array $atributos,
     ) {}
 
@@ -30,9 +31,14 @@ final class InstalacionExtra
         return $this->nombre;
     }
 
-    public function tipo(): ?string
+    public function capacidad(): int
     {
-        return $this->tipo;
+        return $this->capacidad;
+    }
+
+    public function descripcion(): ?string
+    {
+        return $this->descripcion;
     }
 
     /** @return array<string, mixed> */
