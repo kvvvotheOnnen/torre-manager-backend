@@ -18,6 +18,7 @@ final class NormalizadorInstalacionesProyecto
     public function normalizar(array $instalaciones): array
     {
         $normalizadas = [];
+        $nombres = [];
 
         foreach ($instalaciones as $instalacion) {
             $nombre = trim((string) ($instalacion['nombre'] ?? ''));
@@ -25,6 +26,14 @@ final class NormalizadorInstalacionesProyecto
             if ($nombre === '') {
                 throw new InvalidArgumentException('Cada instalación extra debe tener un nombre.');
             }
+
+            $clave = mb_strtolower($nombre);
+
+            if (isset($nombres[$clave])) {
+                throw new InvalidArgumentException("La instalación '{$nombre}' está repetida.");
+            }
+
+            $nombres[$clave] = true;
 
             $capacidad = (int) ($instalacion['capacidad'] ?? 0);
 

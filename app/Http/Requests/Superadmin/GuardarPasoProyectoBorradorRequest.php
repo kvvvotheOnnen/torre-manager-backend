@@ -29,6 +29,11 @@ class GuardarPasoProyectoBorradorRequest extends FormRequest
             'agrupaciones.*.piso_hasta' => ['nullable', 'integer', 'min:0'],
             'agrupaciones.*.unidades_por_piso' => ['nullable', 'integer', 'min:1', 'max:100'],
             'agrupaciones.*.cantidad' => ['nullable', 'integer', 'min:1', 'max:500'],
+            'agrupaciones.*.pisos_excepcion' => ['sometimes', 'array'],
+            'agrupaciones.*.pisos_excepcion.*.piso' => ['required', 'integer', 'min:0'],
+            'agrupaciones.*.pisos_excepcion.*.unidades' => ['required', 'array', 'min:1'],
+            'agrupaciones.*.pisos_excepcion.*.unidades.*.identificador' => ['required', 'string', 'max:255'],
+            'agrupaciones.*.pisos_excepcion.*.unidades.*.tipo' => ['required', 'string', 'in:simple,instalacion'],
 
             'instalaciones' => ['sometimes', 'array'],
             'instalaciones.*.nombre' => ['required_with:instalaciones', 'string', 'max:255'],

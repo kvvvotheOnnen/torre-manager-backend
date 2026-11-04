@@ -16,11 +16,12 @@ final class GeneradorIdentificacionesUnidades
     public const MAX_UNIDADES = 500;
 
     /**
+     * @param  int[]  $pisosExcluidos
      * @return string[]
      *
      * @throws InvalidArgumentException
      */
-    public function generar(?string $prefijo, int $pisoDesde, int $pisoHasta, int $unidadesPorPiso): array
+    public function generar(?string $prefijo, int $pisoDesde, int $pisoHasta, int $unidadesPorPiso, array $pisosExcluidos = []): array
     {
         if ($pisoDesde < 0 || $pisoHasta < $pisoDesde) {
             throw new InvalidArgumentException('El rango de pisos es inválido.');
@@ -30,7 +31,17 @@ final class GeneradorIdentificacionesUnidades
             throw new InvalidArgumentException('Debe existir al menos una unidad por piso.');
         }
 
-        $total = ($pisoHasta - $pisoDesde + 1) * $unidadesPorPiso;
+        $pisosExcluidos = array_map(static fn ($piso) => (int) $piso, $pisosExcluidos);
+        $pisosExcluidos = array_values(array_unique($pisosExcluidos));
+
+        $cantidadPisos = 0;
+        for ($piso = $pisoDesde; $piso <= $pisoHasta; $piso++) {
+            if (! in_array($piso, $pisosExcluidos, true)) {
+                $cantidadPisos++;
+            }
+        }
+
+        $total = $cantidadPisos * $unidadesPorPiso;
 
         if ($total > self::MAX_UNIDADES) {
             throw new InvalidArgumentException('La generación excede el máximo de '.self::MAX_UNIDADES.' unidades.');
@@ -40,6 +51,10 @@ final class GeneradorIdentificacionesUnidades
         $identificaciones = [];
 
         for ($piso = $pisoDesde; $piso <= $pisoHasta; $piso++) {
+            if (in_array($piso, $pisosExcluidos, true)) {
+                continue;
+            }
+
             for ($n = 1; $n <= $unidadesPorPiso; $n++) {
                 $identificaciones[] = ($prefijo !== '' ? $prefijo.'-' : '').$piso.str_pad((string) $n, 2, '0', STR_PAD_LEFT);
             }

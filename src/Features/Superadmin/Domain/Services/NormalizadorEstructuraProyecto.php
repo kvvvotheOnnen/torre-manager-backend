@@ -45,6 +45,8 @@ final class NormalizadorEstructuraProyecto
             $prefijo = isset($agrupacion['prefijo']) ? (string) $agrupacion['prefijo'] : null;
 
             if ($tipoAgrupacion === TipoAgrupacion::Manzana) {
+                $this->validarSinPisosExcepcion($agrupacion, $nombre);
+
                 $cantidad = (int) ($agrupacion['cantidad'] ?? 0);
 
                 if ($cantidad < 1) {
@@ -53,12 +55,25 @@ final class NormalizadorEstructuraProyecto
 
                 $identificadores = $this->generador->generarSecuencial($prefijo ?: 'Casa', $cantidad);
             } else {
+                $pisosExcepcion = $this->normalizarPisosExcepcion($agrupacion, $nombre);
+
                 $identificadores = $this->generador->generar(
                     $prefijo ?: $nombre,
                     (int) ($agrupacion['piso_desde'] ?? 0),
                     (int) ($agrupacion['piso_hasta'] ?? 0),
                     (int) ($agrupacion['unidades_por_piso'] ?? 0),
+                    array_keys($pisosExcepcion),
                 );
+
+                foreach ($pisosExcepcion as $unidades) {
+                    foreach ($unidades as $unidad) {
+                        if ($unidad['tipo'] === 'simple') {
+                            $identificadores[] = $unidad['identificador'];
+                        }
+                    }
+                }
+
+                $this->validarIdentificadoresUnicos($identificadores, $nombre);
             }
 
             $resultado[] = [
@@ -69,6 +84,106 @@ final class NormalizadorEstructuraProyecto
         }
 
         return $resultado;
+    }
+
+    /**
+     * @param  array<string, mixed>  $agrupacion
+     *
+     * @throws InvalidArgumentException
+     */
+    private function validarSinPisosExcepcion(array $agrupacion, string $nombre): void
+    {
+        $pisosExcepcion = $agrupacion['pisos_excepcion'] ?? [];
+
+        if (is_array($pisosExcepcion) && $pisosExcepcion !== []) {
+            throw new InvalidArgumentException("Las manzanas no admiten pisos con excepción (agrupación: {$nombre}).");
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $agrupacion
+     * @return array<int, array<int, array{identificador: string, tipo: string}>>
+     *
+     * @throws InvalidArgumentException
+     */
+    private function normalizarPisosExcepcion(array $agrupacion, string $nombre): array
+    {
+        $pisosExcepcion = $agrupacion['pisos_excepcion'] ?? [];
+
+        if (! is_array($pisosExcepcion) || $pisosExcepcion === []) {
+            return [];
+        }
+
+        $pisoDesde = (int) ($agrupacion['piso_desde'] ?? 0);
+        $pisoHasta = (int) ($agrupacion['piso_hasta'] ?? 0);
+        $resultado = [];
+
+        foreach ($pisosExcepcion as $item) {
+            $piso = (int) ($item['piso'] ?? -1);
+
+            if ($piso < $pisoDesde || $piso > $pisoHasta) {
+                throw new InvalidArgumentException(
+                    "El piso con excepción {$piso} de '{$nombre}' está fuera del rango {$pisoDesde}-{$pisoHasta}.",
+                );
+            }
+
+            if (isset($resultado[$piso])) {
+                throw new InvalidArgumentException(
+                    "El piso {$piso} está repetido en las excepciones de '{$nombre}'.",
+                );
+            }
+
+            $unidades = $item['unidades'] ?? null;
+
+            if (! is_array($unidades) || $unidades === []) {
+                throw new InvalidArgumentException(
+                    "El piso {$piso} de '{$nombre}' debe tener al menos una unidad.",
+                );
+            }
+
+            $normalizadas = [];
+
+            foreach ($unidades as $unidad) {
+                $identificador = trim((string) ($unidad['identificador'] ?? ''));
+
+                if ($identificador === '') {
+                    throw new InvalidArgumentException(
+                        "Cada unidad del piso {$piso} de '{$nombre}' debe tener un identificador.",
+                    );
+                }
+
+                $tipo = (string) ($unidad['tipo'] ?? '');
+
+                if (! in_array($tipo, ['simple', 'instalacion'], true)) {
+                    throw new InvalidArgumentException(
+                        "El tipo de la unidad '{$identificador}' del piso {$piso} de '{$nombre}' no es válido.",
+                    );
+                }
+
+                $normalizadas[] = [
+                    'identificador' => $identificador,
+                    'tipo' => $tipo,
+                ];
+            }
+
+            $resultado[$piso] = $normalizadas;
+        }
+
+        return $resultado;
+    }
+
+    /**
+     * @param  string[]  $identificadores
+     *
+     * @throws InvalidArgumentException
+     */
+    private function validarIdentificadoresUnicos(array $identificadores, string $nombre): void
+    {
+        if (count($identificadores) !== count(array_unique($identificadores))) {
+            throw new InvalidArgumentException(
+                "La agrupación '{$nombre}' tiene identificadores de unidad duplicados.",
+            );
+        }
     }
 
     /**

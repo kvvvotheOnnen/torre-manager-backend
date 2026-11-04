@@ -189,4 +189,117 @@ class SuperadminProyectoBorradorTest extends TestCase
             'nombre' => 'No permitido',
         ])->assertUnprocessable();
     }
+
+    public function test_guarda_edificio_con_pisos_excepcion(): void
+    {
+        $this->autenticarSuperadmin();
+
+        $id = $this->postJson('/api/superadmin/proyectos/borrador', [
+            'nombre' => 'Edificio con excepción',
+        ])->assertCreated()->json('id');
+
+        $this->patchJson("/api/superadmin/proyectos/{$id}/borrador", [
+            'tipo_condominio' => 'edificio',
+        ])->assertOk();
+
+        $this->patchJson("/api/superadmin/proyectos/{$id}/borrador", [
+            'agrupaciones' => [
+                [
+                    'nombre' => 'Edificio',
+                    'tipo' => 'edificio',
+                    'piso_desde' => 1,
+                    'piso_hasta' => 3,
+                    'unidades_por_piso' => 2,
+                    'pisos_excepcion' => [
+                        [
+                            'piso' => 2,
+                            'unidades' => [
+                                ['identificador' => 'PH', 'tipo' => 'simple'],
+                                ['identificador' => 'Quincho', 'tipo' => 'instalacion'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseCount('unidades_principales', 5);
+        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'PH']);
+        $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Edificio-201']);
+        $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Edificio-202']);
+        $this->assertDatabaseCount('instalaciones_extra', 0);
+
+        $this->patchJson("/api/superadmin/proyectos/{$id}/borrador", [
+            'instalaciones' => [
+                ['nombre' => 'Quincho', 'capacidad' => 80, 'descripcion' => 'Sala de fiestas'],
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('instalaciones_extra', [
+            'proyecto_id' => $id,
+            'nombre' => 'Quincho',
+            'capacidad' => 80,
+        ]);
+    }
+
+    public function test_rechaza_piso_excepcion_fuera_del_rango(): void
+    {
+        $this->autenticarSuperadmin();
+
+        $id = $this->postJson('/api/superadmin/proyectos/borrador', [
+            'nombre' => 'Excepción inválida',
+        ])->assertCreated()->json('id');
+
+        $this->patchJson("/api/superadmin/proyectos/{$id}/borrador", [
+            'tipo_condominio' => 'edificio',
+            'agrupaciones' => [
+                [
+                    'nombre' => 'Edificio',
+                    'tipo' => 'edificio',
+                    'piso_desde' => 1,
+                    'piso_hasta' => 3,
+                    'unidades_por_piso' => 2,
+                    'pisos_excepcion' => [
+                        [
+                            'piso' => 7,
+                            'unidades' => [
+                                ['identificador' => 'PH', 'tipo' => 'simple'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])->assertUnprocessable();
+    }
+
+    public function test_rechaza_identificadores_duplicados_en_piso_excepcion(): void
+    {
+        $this->autenticarSuperadmin();
+
+        $id = $this->postJson('/api/superadmin/proyectos/borrador', [
+            'nombre' => 'Excepción duplicada',
+        ])->assertCreated()->json('id');
+
+        $this->patchJson("/api/superadmin/proyectos/{$id}/borrador", [
+            'tipo_condominio' => 'edificio',
+            'agrupaciones' => [
+                [
+                    'nombre' => 'Edificio',
+                    'tipo' => 'edificio',
+                    'piso_desde' => 1,
+                    'piso_hasta' => 3,
+                    'unidades_por_piso' => 2,
+                    'pisos_excepcion' => [
+                        [
+                            'piso' => 2,
+                            'unidades' => [
+                                ['identificador' => 'PH', 'tipo' => 'simple'],
+                                ['identificador' => 'PH', 'tipo' => 'simple'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])->assertUnprocessable();
+    }
 }
