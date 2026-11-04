@@ -85,6 +85,56 @@ interface SuperadminRepositoryInterface
     ): ProyectoDetalle;
 
     /**
+     * Inicia un proyecto en estado borrador con los datos mínimos.
+     *
+     * @throws RecursoNoEncontradoException
+     */
+    public function iniciarProyectoBorrador(string $nombre, ?string $descripcion): ProyectoDetalle;
+
+    /**
+     * Aplica sobre un borrador únicamente los datos recibidos de un paso.
+     *
+     * @param  array<int, array{nombre: string, tipo: TipoAgrupacion, identificadores: string[]}>|null  $agrupaciones
+     * @param  array<int, array{nombre: string, capacidad: int, descripcion?: ?string, atributos?: ?array<string, mixed>}>|null  $instalaciones
+     * @param  ModuloSistema[]|null  $modulos
+     * @param  string[]|null  $administradoresIds
+     *
+     * @throws RecursoNoEncontradoException
+     */
+    public function guardarPasoProyecto(
+        string $id,
+        ?string $nombre,
+        ?string $descripcion,
+        ?TipoCondominio $tipoCondominio,
+        ?array $agrupaciones,
+        ?array $instalaciones,
+        ?array $modulos,
+        ?array $administradoresIds,
+        bool $resetEstructura,
+    ): ProyectoDetalle;
+
+    /**
+     * @return array{agrupaciones: int, unidades_principales: int, administradores: int, modulos: int}
+     *
+     * @throws RecursoNoEncontradoException
+     */
+    public function contarDatosProyecto(string $id): array;
+
+    /**
+     * Marca un borrador como proyecto completo.
+     *
+     * @throws RecursoNoEncontradoException
+     */
+    public function marcarProyectoCompleto(string $id): ProyectoDetalle;
+
+    /**
+     * Elimina un borrador en creación.
+     *
+     * @throws RecursoNoEncontradoException
+     */
+    public function descartarProyectoBorrador(string $id): void;
+
+    /**
      * Elimina un proyecto (tenant) junto con su estructura, accesorias,
      * instalaciones extra y asociaciones con administradores.
      *

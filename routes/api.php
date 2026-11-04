@@ -21,6 +21,9 @@ Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->gr
     Route::post('administradores', [SuperadminController::class, 'crearAdministrador']);
     Route::get('proyectos', [SuperadminController::class, 'proyectos']);
     Route::post('proyectos', [SuperadminController::class, 'crearProyecto']);
+    Route::post('proyectos/borrador', [SuperadminController::class, 'iniciarProyectoBorrador']);
+    Route::patch('proyectos/{proyecto}/borrador', [SuperadminController::class, 'guardarPasoProyecto'])->whereNumber('proyecto');
+    Route::delete('proyectos/{proyecto}/borrador', [SuperadminController::class, 'descartarProyectoBorrador'])->whereNumber('proyecto');
     Route::get('proyectos/{proyecto}', [SuperadminController::class, 'verProyecto'])->whereNumber('proyecto');
     Route::put('proyectos/{proyecto}', [SuperadminController::class, 'actualizarProyecto'])->whereNumber('proyecto');
     Route::delete('proyectos/{proyecto}', [SuperadminController::class, 'eliminarProyecto'])->whereNumber('proyecto');

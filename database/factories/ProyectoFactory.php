@@ -22,6 +22,7 @@ class ProyectoFactory extends Factory
                 ModuloSistema::Infraestructura->value,
                 ModuloSistema::Paqueteria->value,
             ],
+            'estado' => 'completo',
         ];
     }
 

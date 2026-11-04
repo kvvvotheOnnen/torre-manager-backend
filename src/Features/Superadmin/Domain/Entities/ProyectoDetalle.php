@@ -17,7 +17,18 @@ final class ProyectoDetalle
         private readonly array $modulos,
         private readonly array $instalacionesExtra,
         private readonly array $administradoresIds,
+        private readonly EstadoProyecto $estado = EstadoProyecto::Completo,
     ) {}
+
+    public function esBorrador(): bool
+    {
+        return $this->estado === EstadoProyecto::Borrador;
+    }
+
+    public function estado(): EstadoProyecto
+    {
+        return $this->estado;
+    }
 
     public function id(): string
     {

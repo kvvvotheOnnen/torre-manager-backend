@@ -2,22 +2,23 @@
 
 namespace Features\Superadmin\Domain\UseCases;
 
-use Features\Infraestructura\Domain\Entities\TipoAgrupacion;
 use Features\Infraestructura\Domain\Entities\TipoUnidadAccesoria;
-use Features\Infraestructura\Domain\UseCases\GeneradorIdentificacionesUnidades;
 use Features\Infraestructura\Domain\UseCases\GeneradorIdentificadoresAccesorias;
 use Features\Superadmin\Domain\Entities\ModuloSistema;
 use Features\Superadmin\Domain\Entities\ProyectoDetalle;
 use Features\Superadmin\Domain\Entities\TipoCondominio;
 use Features\Superadmin\Domain\Exceptions\RecursoNoEncontradoException;
 use Features\Superadmin\Domain\Repositories\SuperadminRepositoryInterface;
+use Features\Superadmin\Domain\Services\NormalizadorEstructuraProyecto;
+use Features\Superadmin\Domain\Services\NormalizadorInstalacionesProyecto;
 use InvalidArgumentException;
 
 final class CrearProyectoYAsignarAdministradoresUseCase
 {
     public function __construct(
         private readonly SuperadminRepositoryInterface $repository,
-        private readonly GeneradorIdentificacionesUnidades $generador,
+        private readonly NormalizadorEstructuraProyecto $normalizadorEstructura,
+        private readonly NormalizadorInstalacionesProyecto $normalizadorInstalaciones,
         private readonly GeneradorIdentificadoresAccesorias $generadorAccesorias,
     ) {}
 
@@ -79,41 +80,13 @@ final class CrearProyectoYAsignarAdministradoresUseCase
             throw new InvalidArgumentException('Debes asignar al menos un administrador.');
         }
 
-        $agrupacionesNormalizadas = $this->normalizarAgrupaciones($tipo, $agrupaciones);
+        $agrupacionesNormalizadas = $this->normalizadorEstructura->normalizar($tipo, $agrupaciones);
 
         if ($agrupacionesNormalizadas === []) {
             throw new InvalidArgumentException('Debes definir al menos una agrupación para el proyecto.');
         }
 
-        $instalacionesNormalizadas = [];
-        foreach ($instalaciones as $instalacion) {
-            $nombreInstalacion = trim((string) ($instalacion['nombre'] ?? ''));
-
-            if ($nombreInstalacion === '') {
-                throw new InvalidArgumentException('Cada instalación extra debe tener un nombre.');
-            }
-
-            $capacidad = (int) ($instalacion['capacidad'] ?? 0);
-
-            if ($capacidad < 1 || $capacidad > 500) {
-                throw new InvalidArgumentException("La capacidad de '{$nombreInstalacion}' debe estar entre 1 y 500.");
-            }
-
-            $descripcion = $instalacion['descripcion'] ?? null;
-            $descripcion = is_string($descripcion) ? trim($descripcion) : null;
-            $descripcion = $descripcion !== '' ? $descripcion : null;
-
-            if ($descripcion !== null && mb_strlen($descripcion) > 100) {
-                throw new InvalidArgumentException("La descripción de '{$nombreInstalacion}' no puede superar 100 caracteres.");
-            }
-
-            $instalacionesNormalizadas[] = [
-                'nombre' => $nombreInstalacion,
-                'capacidad' => $capacidad,
-                'descripcion' => $descripcion,
-                'atributos' => $instalacion['atributos'] ?? null,
-            ];
-        }
+        $instalacionesNormalizadas = $this->normalizadorInstalaciones->normalizar($instalaciones);
 
         if ($estacionamientos < 0 || $estacionamientos > GeneradorIdentificadoresAccesorias::MAX_POR_LOTE) {
             throw new InvalidArgumentException('La cantidad de estacionamientos debe estar entre 0 y '.GeneradorIdentificadoresAccesorias::MAX_POR_LOTE.'.');
@@ -155,80 +128,5 @@ final class CrearProyectoYAsignarAdministradoresUseCase
             array_values(array_unique($administradoresIds)),
             $accesorias,
         );
-    }
-
-    /**
-     * @param  array<int, array<string, mixed>>  $agrupaciones
-     * @return array<int, array{nombre: string, tipo: TipoAgrupacion, identificadores: string[]}>
-     */
-    private function normalizarAgrupaciones(TipoCondominio $tipoCondominio, array $agrupaciones): array
-    {
-        $resultado = [];
-
-        foreach ($agrupaciones as $agrupacion) {
-            $nombre = trim((string) ($agrupacion['nombre'] ?? ''));
-
-            if ($nombre === '') {
-                throw new InvalidArgumentException('Cada agrupación debe tener un nombre.');
-            }
-
-            $tipoAgrupacion = TipoAgrupacion::tryFrom((string) ($agrupacion['tipo'] ?? ''));
-
-            if ($tipoAgrupacion === null) {
-                throw new InvalidArgumentException("El tipo de agrupación '{$nombre}' no es válido.");
-            }
-
-            $this->validarTipoDeAgrupacion($tipoCondominio, $tipoAgrupacion, $nombre);
-
-            $prefijo = isset($agrupacion['prefijo']) ? (string) $agrupacion['prefijo'] : null;
-
-            if ($tipoAgrupacion === TipoAgrupacion::Manzana) {
-                $cantidad = (int) ($agrupacion['cantidad'] ?? 0);
-
-                if ($cantidad < 1) {
-                    throw new InvalidArgumentException("Indica la cantidad de casas de '{$nombre}'.");
-                }
-
-                $identificadores = $this->generador->generarSecuencial($prefijo ?: 'Casa', $cantidad);
-            } else {
-                $identificadores = $this->generador->generar(
-                    $prefijo ?: $nombre,
-                    (int) ($agrupacion['piso_desde'] ?? 0),
-                    (int) ($agrupacion['piso_hasta'] ?? 0),
-                    (int) ($agrupacion['unidades_por_piso'] ?? 0),
-                );
-            }
-
-            $resultado[] = [
-                'nombre' => $nombre,
-                'tipo' => $tipoAgrupacion,
-                'identificadores' => $identificadores,
-            ];
-        }
-
-        return $resultado;
-    }
-
-    private function validarTipoDeAgrupacion(
-        TipoCondominio $tipoCondominio,
-        TipoAgrupacion $tipoAgrupacion,
-        string $nombre,
-    ): void {
-        $permitidos = match ($tipoCondominio) {
-            TipoCondominio::Torres => [TipoAgrupacion::Torre, TipoAgrupacion::Bloque],
-            TipoCondominio::Casas => [TipoAgrupacion::Manzana],
-            TipoCondominio::Edificio => [TipoAgrupacion::Edificio],
-            TipoCondominio::Mixto => [
-                TipoAgrupacion::Torre,
-                TipoAgrupacion::Bloque,
-                TipoAgrupacion::Manzana,
-            ],
-        };
-
-        if (! in_array($tipoAgrupacion, $permitidos, true)) {
-            throw new InvalidArgumentException(
-                "El tipo de agrupación '{$tipoAgrupacion->value}' no es válido para un condominio de tipo '{$tipoCondominio->value}' (agrupación: {$nombre}).",
-            );
-        }
     }
 }
