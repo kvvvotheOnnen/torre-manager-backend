@@ -23,6 +23,7 @@ Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->gr
     Route::post('proyectos', [SuperadminController::class, 'crearProyecto']);
     Route::get('proyectos/{proyecto}', [SuperadminController::class, 'verProyecto'])->whereNumber('proyecto');
     Route::put('proyectos/{proyecto}', [SuperadminController::class, 'actualizarProyecto'])->whereNumber('proyecto');
+    Route::delete('proyectos/{proyecto}', [SuperadminController::class, 'eliminarProyecto'])->whereNumber('proyecto');
 });
 
 Route::middleware(['auth:sanctum', 'role:administrador,superadmin'])->prefix('infraestructura')->group(function (): void {

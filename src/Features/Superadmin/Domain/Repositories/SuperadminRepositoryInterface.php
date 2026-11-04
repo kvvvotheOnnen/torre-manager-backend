@@ -85,6 +85,14 @@ interface SuperadminRepositoryInterface
     ): ProyectoDetalle;
 
     /**
+     * Elimina un proyecto (tenant) junto con su estructura, accesorias,
+     * instalaciones extra y asociaciones con administradores.
+     *
+     * @throws RecursoNoEncontradoException
+     */
+    public function eliminarProyecto(string $id): void;
+
+    /**
      * Lista los proyectos a los que un usuario está anexado.
      *
      * @return ProyectoDetalle[]

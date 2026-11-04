@@ -244,6 +244,19 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
         );
     }
 
+    public function eliminarProyecto(string $id): void
+    {
+        $proyecto = Proyecto::query()->find($id);
+
+        if ($proyecto === null) {
+            throw new RecursoNoEncontradoException('El proyecto no existe.');
+        }
+
+        DB::transaction(static function () use ($proyecto): void {
+            $proyecto->delete();
+        });
+    }
+
     public function listarProyectosDelUsuario(string $usuarioId): array
     {
         $usuario = User::query()->find($usuarioId);
