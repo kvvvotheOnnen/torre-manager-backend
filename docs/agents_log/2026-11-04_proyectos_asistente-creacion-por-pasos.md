@@ -43,3 +43,11 @@ de datos. La edición se mantiene sin cambios.
 
 - Limpieza programada de borradores huérfanos (por ejemplo, cierre abrupto del
   cliente) en una tarea posterior.
+
+## Corrección posterior (2026-11-04)
+
+- Se detectó que la migración `add_estado_to_proyectos_table` no estaba aplicada
+  en la base local, lo que provocaba un 500 en el listado de proyectos.
+- Se aplicó `php artisan migrate` en el entorno Docker; la migración quedó en
+  estado `Ran`.
+- No hubo cambios de código en esta corrección.
