@@ -12,7 +12,11 @@ final class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $proyecto = Proyecto::factory()->create(['nombre' => 'Condominio Demo']);
+        $this->call(ProyectoVanguardiaSeeder::class);
+
+        $proyecto = Proyecto::query()
+            ->where('nombre', 'Vanguardia Center')
+            ->firstOrFail();
 
         User::factory()->create([
             'nombre' => 'Superadministrador Demo',
@@ -44,7 +48,5 @@ final class DatabaseSeeder extends Seeder
             'rol' => Rol::Conserje->value,
             'proyecto_id' => $proyecto->getKey(),
         ]);
-
-        $this->call(InfraestructuraSeeder::class);
     }
 }
