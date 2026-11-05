@@ -55,7 +55,7 @@ final class NormalizadorEstructuraProyecto
 
                 $identificadores = $this->generador->generarSecuencial($prefijo ?: 'Casa', $cantidad);
             } else {
-                $pisosExcepcion = $this->normalizarPisosExcepcion($agrupacion, $nombre);
+                $pisosExcepcion = $this->normalizarPisosExcepcion($agrupacion, $nombre, $prefijo);
 
                 $identificadores = $this->generador->generar(
                     $prefijo ?: $nombre,
@@ -106,7 +106,7 @@ final class NormalizadorEstructuraProyecto
      *
      * @throws InvalidArgumentException
      */
-    private function normalizarPisosExcepcion(array $agrupacion, string $nombre): array
+    private function normalizarPisosExcepcion(array $agrupacion, string $nombre, ?string $prefijo = null): array
     {
         $pisosExcepcion = $agrupacion['pisos_excepcion'] ?? [];
 
@@ -133,6 +133,14 @@ final class NormalizadorEstructuraProyecto
                 );
             }
 
+            $sinUnidades = filter_var($item['sin_unidades'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+            if ($sinUnidades) {
+                $resultado[$piso] = [];
+
+                continue;
+            }
+
             $unidades = $item['unidades'] ?? null;
 
             if (! is_array($unidades) || $unidades === []) {
@@ -142,27 +150,35 @@ final class NormalizadorEstructuraProyecto
             }
 
             $normalizadas = [];
+            $secuenciaSimple = 0;
 
             foreach ($unidades as $unidad) {
-                $identificador = trim((string) ($unidad['identificador'] ?? ''));
-
-                if ($identificador === '') {
-                    throw new InvalidArgumentException(
-                        "Cada unidad del piso {$piso} de '{$nombre}' debe tener un identificador.",
-                    );
-                }
-
                 $tipo = (string) ($unidad['tipo'] ?? '');
 
                 if (! in_array($tipo, ['simple', 'instalacion'], true)) {
                     throw new InvalidArgumentException(
-                        "El tipo de la unidad '{$identificador}' del piso {$piso} de '{$nombre}' no es válido.",
+                        "El tipo de una unidad del piso {$piso} de '{$nombre}' no es válido.",
                     );
                 }
 
+                if ($tipo === 'simple') {
+                    $secuenciaSimple++;
+
+                    $normalizadas[] = [
+                        'identificador' => $this->generador->generarIdentificador(
+                            $prefijo ?: $nombre,
+                            $piso,
+                            $secuenciaSimple,
+                        ),
+                        'tipo' => 'simple',
+                    ];
+
+                    continue;
+                }
+
                 $normalizadas[] = [
-                    'identificador' => $identificador,
-                    'tipo' => $tipo,
+                    'identificador' => trim((string) ($unidad['identificador'] ?? '')),
+                    'tipo' => 'instalacion',
                 ];
             }
 

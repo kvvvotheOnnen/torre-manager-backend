@@ -56,11 +56,18 @@ final class GeneradorIdentificacionesUnidades
             }
 
             for ($n = 1; $n <= $unidadesPorPiso; $n++) {
-                $identificaciones[] = ($prefijo !== '' ? $prefijo.'-' : '').$piso.str_pad((string) $n, 2, '0', STR_PAD_LEFT);
+                $identificaciones[] = $this->generarIdentificador($prefijo, $piso, $n);
             }
         }
 
         return $identificaciones;
+    }
+
+    public function generarIdentificador(?string $prefijo, int $piso, int $numero): string
+    {
+        $prefijo = trim((string) $prefijo);
+
+        return ($prefijo !== '' ? $prefijo.'-' : '').$piso.str_pad((string) $numero, 2, '0', STR_PAD_LEFT);
     }
 
     /**

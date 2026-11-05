@@ -214,7 +214,7 @@ class SuperadminProyectoBorradorTest extends TestCase
                         [
                             'piso' => 2,
                             'unidades' => [
-                                ['identificador' => 'PH', 'tipo' => 'simple'],
+                                ['tipo' => 'simple'],
                                 ['identificador' => 'Quincho', 'tipo' => 'instalacion'],
                             ],
                         ],
@@ -224,8 +224,7 @@ class SuperadminProyectoBorradorTest extends TestCase
         ])->assertOk();
 
         $this->assertDatabaseCount('unidades_principales', 5);
-        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'PH']);
-        $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Edificio-201']);
+        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Edificio-201']);
         $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Edificio-202']);
         $this->assertDatabaseCount('instalaciones_extra', 0);
 
@@ -240,6 +239,100 @@ class SuperadminProyectoBorradorTest extends TestCase
             'nombre' => 'Quincho',
             'capacidad' => 80,
         ]);
+    }
+
+    public function test_piso_excepcion_sin_unidades_omite_el_piso_y_salta_su_numeracion(): void
+    {
+        $this->autenticarSuperadmin();
+
+        $id = $this->postJson('/api/superadmin/proyectos/borrador', [
+            'nombre' => 'Edificio con piso vacío',
+        ])->assertCreated()->json('id');
+
+        $this->patchJson("/api/superadmin/proyectos/{$id}/borrador", [
+            'tipo_condominio' => 'edificio',
+            'agrupaciones' => [
+                [
+                    'nombre' => 'Edificio',
+                    'tipo' => 'edificio',
+                    'piso_desde' => 1,
+                    'piso_hasta' => 3,
+                    'unidades_por_piso' => 2,
+                    'pisos_excepcion' => [
+                        ['piso' => 2, 'sin_unidades' => true],
+                    ],
+                ],
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseCount('unidades_principales', 4);
+        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Edificio-101']);
+        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Edificio-301']);
+        $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Edificio-201']);
+        $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Edificio-202']);
+    }
+
+    public function test_unidades_simples_de_piso_excepcion_respetan_numeracion(): void
+    {
+        $this->autenticarSuperadmin();
+
+        $id = $this->postJson('/api/superadmin/proyectos/borrador', [
+            'nombre' => 'Edificio con unidades manuales',
+        ])->assertCreated()->json('id');
+
+        $this->patchJson("/api/superadmin/proyectos/{$id}/borrador", [
+            'tipo_condominio' => 'edificio',
+            'agrupaciones' => [
+                [
+                    'nombre' => 'Edificio',
+                    'tipo' => 'edificio',
+                    'piso_desde' => 1,
+                    'piso_hasta' => 3,
+                    'unidades_por_piso' => 2,
+                    'pisos_excepcion' => [
+                        [
+                            'piso' => 2,
+                            'unidades' => [
+                                ['tipo' => 'simple'],
+                                ['tipo' => 'simple'],
+                                ['identificador' => 'Quincho', 'tipo' => 'instalacion'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseCount('unidades_principales', 6);
+        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Edificio-201']);
+        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Edificio-202']);
+        $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Edificio-203']);
+        $this->assertDatabaseCount('instalaciones_extra', 0);
+    }
+
+    public function test_rechaza_piso_excepcion_sin_unidades_si_no_esta_marcado(): void
+    {
+        $this->autenticarSuperadmin();
+
+        $id = $this->postJson('/api/superadmin/proyectos/borrador', [
+            'nombre' => 'Piso sin unidades inválido',
+        ])->assertCreated()->json('id');
+
+        $this->patchJson("/api/superadmin/proyectos/{$id}/borrador", [
+            'tipo_condominio' => 'edificio',
+            'agrupaciones' => [
+                [
+                    'nombre' => 'Edificio',
+                    'tipo' => 'edificio',
+                    'piso_desde' => 1,
+                    'piso_hasta' => 3,
+                    'unidades_por_piso' => 2,
+                    'pisos_excepcion' => [
+                        ['piso' => 2],
+                    ],
+                ],
+            ],
+        ])->assertUnprocessable();
     }
 
     public function test_rechaza_piso_excepcion_fuera_del_rango(): void
@@ -263,38 +356,7 @@ class SuperadminProyectoBorradorTest extends TestCase
                         [
                             'piso' => 7,
                             'unidades' => [
-                                ['identificador' => 'PH', 'tipo' => 'simple'],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ])->assertUnprocessable();
-    }
-
-    public function test_rechaza_identificadores_duplicados_en_piso_excepcion(): void
-    {
-        $this->autenticarSuperadmin();
-
-        $id = $this->postJson('/api/superadmin/proyectos/borrador', [
-            'nombre' => 'Excepción duplicada',
-        ])->assertCreated()->json('id');
-
-        $this->patchJson("/api/superadmin/proyectos/{$id}/borrador", [
-            'tipo_condominio' => 'edificio',
-            'agrupaciones' => [
-                [
-                    'nombre' => 'Edificio',
-                    'tipo' => 'edificio',
-                    'piso_desde' => 1,
-                    'piso_hasta' => 3,
-                    'unidades_por_piso' => 2,
-                    'pisos_excepcion' => [
-                        [
-                            'piso' => 2,
-                            'unidades' => [
-                                ['identificador' => 'PH', 'tipo' => 'simple'],
-                                ['identificador' => 'PH', 'tipo' => 'simple'],
+                                ['tipo' => 'simple'],
                             ],
                         ],
                     ],

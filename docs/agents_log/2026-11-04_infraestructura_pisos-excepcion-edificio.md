@@ -45,3 +45,14 @@ unidades, distinguiendo entre unidades simples e instalaciones extra.
 ## Pendientes
 
 - Ninguno para esta tarea.
+
+## Ajuste posterior: piso sin unidades y numeración automática
+
+- Se agregó `pisos_excepcion.*.sin_unidades` para permitir pisos con excepción
+  completamente vacíos, sin exigir unidades.
+- Las unidades simples de un piso con excepción ahora generan su identificador
+  automáticamente con la nomenclatura del piso (`201`, `202`, ...).
+- Los pisos sin unidades se omiten en la numeración: si el piso 2 está vacío,
+  el piso 3 comienza en `301`.
+- Las instalaciones extra no consumen numeración de unidades.
+- Verificación: `php artisan test` — 32 tests, 120 aserciones, todo en verde.
