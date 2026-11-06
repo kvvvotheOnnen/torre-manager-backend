@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\InfraestructuraController;
 use App\Http\Controllers\Api\SuperadminController;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ Route::get('/user', function (Request $request) {
 
 Route::middleware(['auth:sanctum', 'role:administrador,superadmin'])->group(function (): void {
     Route::get('mis-proyectos', [SuperadminController::class, 'misProyectos']);
+    Route::get('dashboard/modulos', [DashboardController::class, 'modulos']);
 });
 
 Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->group(function (): void {

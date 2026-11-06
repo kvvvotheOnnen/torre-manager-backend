@@ -445,6 +445,19 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
                 ->with('instalacionesExtra', 'administradores')
                 ->orderBy('nombre')
                 ->get();
+
+            if ($usuario->proyecto_id !== null && ! $proyectos->contains('id', $usuario->proyecto_id)) {
+                $proyectoLegado = Proyecto::query()
+                    ->whereKey($usuario->proyecto_id)
+                    ->where('estado', EstadoProyecto::Completo->value)
+                    ->with('instalacionesExtra', 'administradores')
+                    ->first();
+
+                if ($proyectoLegado !== null) {
+                    $proyectos->push($proyectoLegado);
+                    $proyectos = $proyectos->sortBy('nombre')->values();
+                }
+            }
         }
 
         return $proyectos->map(fn (Proyecto $proyecto) => $this->toProyectoDetalle($proyecto))->all();
