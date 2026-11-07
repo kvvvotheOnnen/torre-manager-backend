@@ -19,7 +19,7 @@ final class CatalogoModulosDashboard
      *
      * @return ModuloDashboard[]
      */
-    public function construir(ProyectoConModulos $proyecto): array
+    public function construir(ProyectoConModulos $proyecto, bool $esSuperadmin = false): array
     {
         $habilitados = array_map(
             static fn (ModuloSistema $modulo) => $modulo->value,
@@ -29,6 +29,10 @@ final class CatalogoModulosDashboard
         $modulos = [];
 
         foreach (ModuloSistema::cases() as $modulo) {
+            if (! $esSuperadmin && $modulo->esExclusivoSuperadmin()) {
+                continue;
+            }
+
             $modulos[] = new ModuloDashboard(
                 id: $modulo->value,
                 nombre: $modulo->nombre(),

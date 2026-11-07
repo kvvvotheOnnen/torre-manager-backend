@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Features\Auth\Domain\Entities\Rol;
 use Features\Dashboard\Domain\Entities\ModuloDashboard;
 use Features\Dashboard\Domain\Exceptions\ProyectoNoDisponibleException;
 use Features\Dashboard\Domain\UseCases\ObtenerModulosDashboardUseCase;
@@ -21,6 +22,7 @@ final class DashboardController extends Controller
             $modulos = $this->obtenerModulosUseCase->execute(
                 (string) $request->user()->getAuthIdentifier(),
                 $request->header('X-Proyecto-Id') ?? $request->input('proyecto_id'),
+                $request->user()->rol === Rol::Superadmin->value,
             );
         } catch (ProyectoNoDisponibleException $exception) {
             return response()->json(['message' => $exception->getMessage()], 404);

@@ -19,13 +19,16 @@ final class ObtenerModulosDashboardUseCase
      *
      * @throws ProyectoNoDisponibleException
      */
-    public function execute(string $usuarioId, ?string $proyectoIdSolicitado = null): array
-    {
+    public function execute(
+        string $usuarioId,
+        ?string $proyectoIdSolicitado = null,
+        bool $esSuperadmin = false,
+    ): array {
         $proyecto = $this->repository->obtenerProyectoDelUsuario(
             $usuarioId,
             $proyectoIdSolicitado,
         );
 
-        return $this->catalogo->construir($proyecto);
+        return $this->catalogo->construir($proyecto, $esSuperadmin);
     }
 }

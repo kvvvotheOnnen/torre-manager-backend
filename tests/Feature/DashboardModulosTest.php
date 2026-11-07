@@ -15,7 +15,7 @@ class DashboardModulosTest extends TestCase
     public function test_admin_recibe_modulos_globales_y_configurables_con_su_estado(): void
     {
         $proyecto = Proyecto::factory()->create([
-            'modulos' => ['infraestructura'],
+            'modulos' => ['paqueteria', 'infraestructura'],
         ]);
         $admin = User::factory()->administrador()->create([
             'proyecto_id' => $proyecto->getKey(),
@@ -31,14 +31,12 @@ class DashboardModulosTest extends TestCase
 
         $modulos = collect($response->json('modulos'));
 
-        $this->assertCount(11, $modulos);
-
-        $infraestructura = $modulos->firstWhere('id', 'infraestructura');
-        $this->assertTrue($infraestructura['habilitado']);
-        $this->assertSame('proyecto', $infraestructura['tipo']);
+        $this->assertCount(10, $modulos);
+        $this->assertNull($modulos->firstWhere('id', 'infraestructura'));
 
         $paqueteria = $modulos->firstWhere('id', 'paqueteria');
-        $this->assertFalse($paqueteria['habilitado']);
+        $this->assertTrue($paqueteria['habilitado']);
+        $this->assertSame('proyecto', $paqueteria['tipo']);
 
         foreach ([
             'registro_conserjes',
@@ -84,7 +82,28 @@ class DashboardModulosTest extends TestCase
         $modulosB = collect($responseB->json('modulos'));
         $this->assertTrue($modulosB->firstWhere('id', 'paqueteria')['habilitado']);
         $this->assertTrue($modulosB->firstWhere('id', 'quincho')['habilitado']);
-        $this->assertFalse($modulosB->firstWhere('id', 'infraestructura')['habilitado']);
+        $this->assertNull($modulosB->firstWhere('id', 'infraestructura'));
+    }
+
+    public function test_superadmin_si_recibe_infraestructura_en_el_catalogo(): void
+    {
+        $proyecto = Proyecto::factory()->create([
+            'modulos' => ['infraestructura'],
+        ]);
+        Sanctum::actingAs(User::factory()->superadmin()->create());
+
+        $response = $this->getJson('/api/dashboard/modulos', [
+            'X-Proyecto-Id' => (string) $proyecto->getKey(),
+        ]);
+
+        $response->assertOk();
+
+        $modulos = collect($response->json('modulos'));
+
+        $this->assertCount(11, $modulos);
+        $infraestructura = $modulos->firstWhere('id', 'infraestructura');
+        $this->assertTrue($infraestructura['habilitado']);
+        $this->assertSame('proyecto', $infraestructura['tipo']);
     }
 
     public function test_no_permite_consultar_modulos_de_un_proyecto_sin_acceso(): void

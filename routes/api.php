@@ -31,7 +31,7 @@ Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->gr
     Route::delete('proyectos/{proyecto}', [SuperadminController::class, 'eliminarProyecto'])->whereNumber('proyecto');
 });
 
-Route::middleware(['auth:sanctum', 'role:administrador,superadmin'])->prefix('infraestructura')->group(function (): void {
+Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('infraestructura')->group(function (): void {
     Route::get('proyecto', [InfraestructuraController::class, 'miProyecto']);
     Route::post('proyectos', [InfraestructuraController::class, 'crearProyecto']);
     Route::post('agrupaciones', [InfraestructuraController::class, 'crearAgrupacion']);

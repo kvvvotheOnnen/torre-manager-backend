@@ -10,6 +10,11 @@ enum ModuloSistema: string
     case GastosComunes = 'gastos_comunes';
     case ControlAcceso = 'control_acceso';
 
+    public function esExclusivoSuperadmin(): bool
+    {
+        return $this === self::Infraestructura;
+    }
+
     public function nombre(): string
     {
         return match ($this) {
