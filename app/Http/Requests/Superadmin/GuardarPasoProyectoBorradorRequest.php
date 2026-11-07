@@ -43,7 +43,7 @@ class GuardarPasoProyectoBorradorRequest extends FormRequest
             'instalaciones.*.atributos' => ['nullable', 'array'],
 
             'modulos' => ['sometimes', 'array'],
-            'modulos.*' => ['string', 'in:infraestructura,paqueteria,quincho,gastos_comunes,control_acceso'],
+            'modulos.*' => ['string', 'in:infraestructura'],
 
             'admin_ids' => ['sometimes', 'array'],
             'admin_ids.*' => ['integer'],

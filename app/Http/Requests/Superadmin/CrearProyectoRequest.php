@@ -21,7 +21,7 @@ class CrearProyectoRequest extends FormRequest
             'descripcion' => ['nullable', 'string', 'max:1000'],
             'tipo_condominio' => ['required', 'string', 'in:torres,casas,edificio,mixto'],
             'modulos' => ['required', 'array', 'min:1'],
-            'modulos.*' => ['string', 'in:infraestructura,paqueteria,quincho,gastos_comunes,control_acceso'],
+            'modulos.*' => ['string', 'in:infraestructura'],
 
             'agrupaciones' => ['required', 'array', 'min:1'],
             'agrupaciones.*.nombre' => ['required', 'string', 'max:255'],

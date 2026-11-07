@@ -15,7 +15,7 @@ class DashboardModulosTest extends TestCase
     public function test_admin_recibe_modulos_globales_y_configurables_con_su_estado(): void
     {
         $proyecto = Proyecto::factory()->create([
-            'modulos' => ['paqueteria', 'infraestructura'],
+            'modulos' => ['infraestructura'],
         ]);
         $admin = User::factory()->administrador()->create([
             'proyecto_id' => $proyecto->getKey(),
@@ -34,11 +34,11 @@ class DashboardModulosTest extends TestCase
         $this->assertCount(10, $modulos);
         $this->assertNull($modulos->firstWhere('id', 'infraestructura'));
 
-        $paqueteria = $modulos->firstWhere('id', 'paqueteria');
-        $this->assertTrue($paqueteria['habilitado']);
-        $this->assertSame('proyecto', $paqueteria['tipo']);
-
         foreach ([
+            'paqueteria',
+            'instalaciones_extra',
+            'gastos_comunes',
+            'control_acceso',
             'registro_conserjes',
             'cambio_unidad_residente',
             'solicitudes_residente',
@@ -53,36 +53,37 @@ class DashboardModulosTest extends TestCase
         }
     }
 
-    public function test_cambiar_proyecto_activo_cambia_los_modulos_habilitados(): void
+    public function test_los_modulos_globales_no_dependen_del_proyecto_activo(): void
     {
-        $proyectoA = Proyecto::factory()->create([
-            'nombre' => 'Proyecto A',
-            'modulos' => ['infraestructura'],
-        ]);
-        $proyectoB = Proyecto::factory()->create([
-            'nombre' => 'Proyecto B',
-            'modulos' => ['paqueteria', 'quincho'],
-        ]);
+        $proyectoA = Proyecto::factory()->create(['nombre' => 'Proyecto A']);
+        $proyectoB = Proyecto::factory()->create(['nombre' => 'Proyecto B']);
         $admin = User::factory()->administrador()->create();
         $admin->proyectos()->attach([$proyectoA->getKey(), $proyectoB->getKey()]);
         Sanctum::actingAs($admin);
 
-        $responseA = $this->getJson('/api/dashboard/modulos', [
-            'X-Proyecto-Id' => (string) $proyectoA->getKey(),
-        ]);
-        $responseA->assertOk();
-        $this->assertFalse(
-            collect($responseA->json('modulos'))->firstWhere('id', 'paqueteria')['habilitado'],
-        );
+        foreach ([$proyectoA, $proyectoB] as $proyecto) {
+            $response = $this->getJson('/api/dashboard/modulos', [
+                'X-Proyecto-Id' => (string) $proyecto->getKey(),
+            ]);
 
-        $responseB = $this->getJson('/api/dashboard/modulos', [
-            'X-Proyecto-Id' => (string) $proyectoB->getKey(),
-        ]);
-        $responseB->assertOk();
-        $modulosB = collect($responseB->json('modulos'));
-        $this->assertTrue($modulosB->firstWhere('id', 'paqueteria')['habilitado']);
-        $this->assertTrue($modulosB->firstWhere('id', 'quincho')['habilitado']);
-        $this->assertNull($modulosB->firstWhere('id', 'infraestructura'));
+            $response->assertOk();
+            $modulos = collect($response->json('modulos'));
+
+            $this->assertCount(10, $modulos);
+            $this->assertNull($modulos->firstWhere('id', 'infraestructura'));
+
+            foreach ([
+                'paqueteria',
+                'instalaciones_extra',
+                'gastos_comunes',
+                'control_acceso',
+            ] as $id) {
+                $modulo = $modulos->firstWhere('id', $id);
+                $this->assertNotNull($modulo, "Falta el módulo global {$id}.");
+                $this->assertTrue($modulo['habilitado']);
+                $this->assertSame('general', $modulo['tipo']);
+            }
+        }
     }
 
     public function test_superadmin_si_recibe_infraestructura_en_el_catalogo(): void

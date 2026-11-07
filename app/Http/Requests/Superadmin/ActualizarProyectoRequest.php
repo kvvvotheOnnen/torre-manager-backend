@@ -20,7 +20,7 @@ class ActualizarProyectoRequest extends FormRequest
             'nombre' => ['required', 'string', 'max:255'],
             'descripcion' => ['nullable', 'string', 'max:1000'],
             'modulos' => ['required', 'array', 'min:1'],
-            'modulos.*' => ['string', 'in:infraestructura,paqueteria,quincho,gastos_comunes,control_acceso'],
+            'modulos.*' => ['string', 'in:infraestructura'],
 
             'instalaciones' => ['nullable', 'array'],
             'instalaciones.*.nombre' => ['required_with:instalaciones', 'string', 'max:255', 'distinct'],

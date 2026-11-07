@@ -89,7 +89,7 @@ class SuperadminProyectoBorradorTest extends TestCase
         ])->assertOk();
 
         $response = $this->patchJson("/api/superadmin/proyectos/{$id}/borrador", [
-            'modulos' => ['infraestructura', 'paqueteria'],
+            'modulos' => ['infraestructura'],
             'finalizar' => true,
         ]);
 

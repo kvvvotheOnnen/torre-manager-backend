@@ -20,7 +20,6 @@ class ProyectoFactory extends Factory
             'tipo_condominio' => TipoCondominio::Torres->value,
             'modulos' => [
                 ModuloSistema::Infraestructura->value,
-                ModuloSistema::Paqueteria->value,
             ],
             'estado' => 'completo',
         ];

@@ -470,10 +470,10 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
             nombre: $proyecto->nombre,
             descripcion: $proyecto->descripcion,
             tipoCondominio: TipoCondominio::from($proyecto->tipo_condominio ?? 'torres'),
-            modulos: array_map(
-                static fn (string $modulo) => ModuloSistema::from($modulo),
+            modulos: array_values(array_filter(array_map(
+                static fn (string $modulo) => ModuloSistema::tryFrom($modulo),
                 $proyecto->modulos ?? [],
-            ),
+            ))),
             instalacionesExtra: $proyecto->instalacionesExtra
                 ->map(static fn (InstalacionExtra $instalacion) => $instalacion->toEntity())
                 ->all(),
