@@ -79,3 +79,30 @@ pueden dirigirse al correo dueño de la cuenta.
 - Integrar el repositorio en los casos de uso de conserjes y residentes cuando
   esos flujos se implementen.
 - Evaluar el encolado de correos cuando aumente el volumen.
+
+---
+
+## 2026-11-07 — Fusión con la feature de dashboard admin
+
+**Branch:** `feature/koke/dashboard-admin/2026-11-06`
+
+### Contexto
+
+La rama de correo se había creado desde `main`, por lo que no incluía el
+dashboard de administrador y la ruta `api/dashboard/modulos` respondía 404.
+Se integró la feature de correo dentro de la rama de dashboard.
+
+### Cambios realizados
+
+- Merge de `feature/koke/correo-resend/2026-11-07` sobre
+  `feature/koke/dashboard-admin/2026-11-06`.
+- Único conflicto: `app/Providers/AppServiceProvider.php`, porque ambas ramas
+  agregaban imports y bindings en el mismo bloque. Se conservaron los bindings
+  de `Dashboard` y de `Correo`.
+
+### Verificación
+
+- `composer dump-autoload` y `php artisan optimize:clear`: correctos.
+- `php artisan migrate`: sin migraciones pendientes.
+- `php artisan route:list`: la ruta `api/dashboard/modulos` está registrada.
+- `php artisan test`: 45 pruebas aprobadas.
