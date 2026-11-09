@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Proyecto;
+use App\Models\UnidadPrincipal;
 use App\Models\User;
 use Features\Auth\Domain\Entities\Rol;
 use Illuminate\Database\Seeder;
@@ -33,13 +34,20 @@ final class DatabaseSeeder extends Seeder
             'proyecto_id' => $proyecto->getKey(),
         ])->proyectos()->sync([$proyecto->getKey()]);
 
-        User::factory()->create([
+        $residente = User::factory()->create([
             'nombre' => 'Residente Demo',
             'email' => env('RESIDENTE_EMAIL', 'residente@torremanager.test'),
             'password' => Hash::make(env('RESIDENTE_PASSWORD', 'password')),
             'rol' => Rol::Residente->value,
             'proyecto_id' => $proyecto->getKey(),
         ]);
+
+        // Asigna el residente a la unidad Edificio-801
+        UnidadPrincipal::query()
+            ->where('identificador', 'Edificio-801')
+            ->whereHas('agrupacion', fn ($q) => $q->where('proyecto_id', $proyecto->getKey()))
+            ->first()
+            ?->update(['residente_id' => $residente->getKey()]);
 
         User::factory()->create([
             'nombre' => 'Conserje Demo',

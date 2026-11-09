@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\InfraestructuraController;
+use App\Http\Controllers\Api\ResidenteController;
 use App\Http\Controllers\Api\SuperadminController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +17,10 @@ Route::get('/user', function (Request $request) {
 Route::middleware(['auth:sanctum', 'role:administrador,superadmin'])->group(function (): void {
     Route::get('mis-proyectos', [SuperadminController::class, 'misProyectos']);
     Route::get('dashboard/modulos', [DashboardController::class, 'modulos']);
+});
+
+Route::middleware(['auth:sanctum', 'role:residente'])->prefix('residente')->group(function (): void {
+    Route::get('mi-informacion', [ResidenteController::class, 'miInformacion']);
 });
 
 Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->group(function (): void {
