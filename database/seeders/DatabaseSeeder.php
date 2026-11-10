@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Paquete;
 use App\Models\Proyecto;
 use App\Models\UnidadPrincipal;
 use App\Models\User;
@@ -27,12 +28,13 @@ final class DatabaseSeeder extends Seeder
             'proyecto_id' => null,
         ]);
 
-        User::factory()->administrador()->create([
+        $admin = User::factory()->administrador()->create([
             'nombre' => 'Administrador Demo',
             'email' => env('ADMIN_EMAIL', 'admin@torremanager.test'),
             'password' => Hash::make(env('ADMIN_PASSWORD', 'password')),
             'proyecto_id' => $proyecto->getKey(),
-        ])->proyectos()->sync([$proyecto->getKey()]);
+        ]);
+        $admin->proyectos()->sync([$proyecto->getKey()]);
 
         $residente = User::factory()->create([
             'nombre' => 'Residente Demo',
@@ -43,11 +45,35 @@ final class DatabaseSeeder extends Seeder
         ]);
 
         // Asigna el residente a la unidad Edificio-801
-        UnidadPrincipal::query()
+        $unidad = UnidadPrincipal::query()
             ->where('identificador', 'Edificio-801')
             ->whereHas('agrupacion', fn ($q) => $q->where('proyecto_id', $proyecto->getKey()))
-            ->first()
-            ?->update(['residente_id' => $residente->getKey()]);
+            ->first();
+
+        $unidad?->update(['residente_id' => $residente->getKey()]);
+
+        // Paquetes demo para el residente
+        Paquete::query()->create([
+            'proyecto_id' => $proyecto->getKey(),
+            'unidad_principal_id' => $unidad?->getKey(),
+            'residente_id' => $residente->getKey(),
+            'descripcion' => 'Paquete de Amazon',
+            'remitente' => 'Amazon',
+            'fecha_recepcion' => now()->subDays(2),
+            'estado' => 'pendiente',
+            'registrado_por' => $admin->getKey() ?? 1,
+        ]);
+        Paquete::query()->create([
+            'proyecto_id' => $proyecto->getKey(),
+            'unidad_principal_id' => $unidad?->getKey(),
+            'residente_id' => $residente->getKey(),
+            'descripcion' => 'Sobre de MercadoLibre',
+            'remitente' => 'MercadoLibre',
+            'fecha_recepcion' => now()->subDays(5),
+            'estado' => 'retirado',
+            'fecha_retiro' => now()->subDays(4),
+            'registrado_por' => $admin->getKey() ?? 1,
+        ]);
 
         User::factory()->create([
             'nombre' => 'Conserje Demo',
