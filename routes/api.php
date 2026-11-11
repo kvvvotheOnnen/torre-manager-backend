@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AsistenteResidenteController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\InfraestructuraController;
+use App\Http\Controllers\Api\PaqueteriaController;
 use App\Http\Controllers\Api\ResidenteController;
 use App\Http\Controllers\Api\SuperadminController;
 use Illuminate\Http\Request;
@@ -30,6 +31,17 @@ Route::middleware(['auth:sanctum', 'role:administrador'])->prefix('admin/asisten
 Route::middleware(['auth:sanctum', 'role:residente'])->prefix('residente')->group(function (): void {
     Route::get('mi-informacion', [ResidenteController::class, 'miInformacion']);
     Route::post('asistente/consultas', [AsistenteResidenteController::class, 'consultar']);
+});
+
+Route::middleware(['auth:sanctum', 'role:residente,conserje,administrador,superadmin'])->group(function (): void {
+    Route::get('paqueteria', [PaqueteriaController::class, 'index']);
+});
+
+Route::middleware(['auth:sanctum', 'role:conserje,administrador,superadmin'])->group(function (): void {
+    Route::get('paqueteria/unidades', [PaqueteriaController::class, 'unidades']);
+    Route::post('paqueteria', [PaqueteriaController::class, 'registrar']);
+    Route::put('paqueteria/{id}', [PaqueteriaController::class, 'actualizar'])->whereNumber('id');
+    Route::patch('paqueteria/{id}/retirar', [PaqueteriaController::class, 'retirar'])->whereNumber('id');
 });
 
 Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->group(function (): void {
