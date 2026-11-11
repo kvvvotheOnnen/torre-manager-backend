@@ -21,6 +21,7 @@ enum ModuloGeneral: string
     case RegistroEmpleados = 'registro_empleados';
     case PersonasExternasOficios = 'personas_externas_oficios';
     case AlertasNoticias = 'alertas_noticias';
+    case AsistenteIaAdmin = 'asistente_ia_admin';
 
     public function nombre(): string
     {
@@ -35,6 +36,7 @@ enum ModuloGeneral: string
             self::RegistroEmpleados => 'Registro de otros empleados',
             self::PersonasExternasOficios => 'Personas externas para oficios',
             self::AlertasNoticias => 'Alertas y noticias',
+            self::AsistenteIaAdmin => 'IA admin',
         };
     }
 
@@ -51,6 +53,7 @@ enum ModuloGeneral: string
             self::RegistroEmpleados => 'Registra al personal de aseo y otros empleados.',
             self::PersonasExternasOficios => 'Registra personas externas que realizan oficios.',
             self::AlertasNoticias => 'Crea alertas y noticias para la comunidad.',
+            self::AsistenteIaAdmin => 'Carga el documento PDF que usará la IA para responder a los residentes.',
         };
     }
 }

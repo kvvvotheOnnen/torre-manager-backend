@@ -31,7 +31,7 @@ class DashboardModulosTest extends TestCase
 
         $modulos = collect($response->json('modulos'));
 
-        $this->assertCount(10, $modulos);
+        $this->assertCount(11, $modulos);
         $this->assertNull($modulos->firstWhere('id', 'infraestructura'));
 
         foreach ([
@@ -45,6 +45,7 @@ class DashboardModulosTest extends TestCase
             'registro_empleados',
             'personas_externas_oficios',
             'alertas_noticias',
+            'asistente_ia_admin',
         ] as $id) {
             $modulo = $modulos->firstWhere('id', $id);
             $this->assertNotNull($modulo, "Falta el módulo global {$id}.");
@@ -69,7 +70,7 @@ class DashboardModulosTest extends TestCase
             $response->assertOk();
             $modulos = collect($response->json('modulos'));
 
-            $this->assertCount(10, $modulos);
+            $this->assertCount(11, $modulos);
             $this->assertNull($modulos->firstWhere('id', 'infraestructura'));
 
             foreach ([
@@ -105,6 +106,7 @@ class DashboardModulosTest extends TestCase
         $infraestructura = $modulos->firstWhere('id', 'infraestructura');
         $this->assertTrue($infraestructura['habilitado']);
         $this->assertSame('proyecto', $infraestructura['tipo']);
+        $this->assertNull($modulos->firstWhere('id', 'asistente_ia_admin'));
     }
 
     public function test_no_permite_consultar_modulos_de_un_proyecto_sin_acceso(): void

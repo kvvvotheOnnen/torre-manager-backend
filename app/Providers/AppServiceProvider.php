@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use Features\Asistente\Data\Repositories\DocumentoRepository;
+use Features\Asistente\Data\Repositories\OllamaRepository;
+use Features\Asistente\Data\Services\PdfTextExtractor;
+use Features\Asistente\Domain\Repositories\DocumentoRepositoryInterface;
+use Features\Asistente\Domain\Repositories\ExtractorPdfInterface;
+use Features\Asistente\Domain\Repositories\ModeloIARepositoryInterface;
 use Features\Auth\Data\Repositories\AuthRepository;
 use Features\Auth\Domain\Repositories\AuthRepositoryInterface;
 use Features\Correo\Data\Repositories\CorreoResendRepository;
@@ -23,6 +29,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(DocumentoRepositoryInterface::class, DocumentoRepository::class);
+        $this->app->bind(ExtractorPdfInterface::class, PdfTextExtractor::class);
+        $this->app->bind(ModeloIARepositoryInterface::class, OllamaRepository::class);
         $this->app->bind(AuthRepositoryInterface::class, AuthRepository::class);
         $this->app->bind(CorreoRepositoryInterface::class, CorreoResendRepository::class);
         $this->app->bind(DashboardRepositoryInterface::class, DashboardRepository::class);

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\AsistenteAdminController;
+use App\Http\Controllers\Api\AsistenteResidenteController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\InfraestructuraController;
@@ -19,8 +21,15 @@ Route::middleware(['auth:sanctum', 'role:administrador,superadmin'])->group(func
     Route::get('dashboard/modulos', [DashboardController::class, 'modulos']);
 });
 
+Route::middleware(['auth:sanctum', 'role:administrador'])->prefix('admin/asistente')->group(function (): void {
+    Route::get('documento', [AsistenteAdminController::class, 'mostrar']);
+    Route::post('documento', [AsistenteAdminController::class, 'subir']);
+    Route::delete('documento', [AsistenteAdminController::class, 'eliminar']);
+});
+
 Route::middleware(['auth:sanctum', 'role:residente'])->prefix('residente')->group(function (): void {
     Route::get('mi-informacion', [ResidenteController::class, 'miInformacion']);
+    Route::post('asistente/consultas', [AsistenteResidenteController::class, 'consultar']);
 });
 
 Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->group(function (): void {

@@ -36,4 +36,12 @@ return [
         ],
     ],
 
+    'ollama' => [
+        'base_url' => env('OLLAMA_BASE_URL', 'http://ollama:11434'),
+        'chat_model' => env('OLLAMA_CHAT_MODEL', 'qwen2.5:7b-instruct'),
+        'timeout' => env('OLLAMA_TIMEOUT', 180),
+        'num_ctx' => env('OLLAMA_NUM_CTX', 8192),
+        'max_document_tokens' => env('OLLAMA_MAX_DOCUMENT_TOKENS', 6000),
+    ],
+
 ];

@@ -43,6 +43,10 @@ final class CatalogoModulosDashboard
         }
 
         foreach (ModuloGeneral::cases() as $modulo) {
+            if ($esSuperadmin && $modulo === ModuloGeneral::AsistenteIaAdmin) {
+                continue;
+            }
+
             $modulos[] = new ModuloDashboard(
                 id: $modulo->value,
                 nombre: $modulo->nombre(),
