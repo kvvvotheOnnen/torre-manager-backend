@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Agrupacion;
 use App\Models\Proyecto;
+use App\Models\ProyectoUsuario;
 use App\Models\UnidadPrincipal;
 use App\Models\UnidadUsuario;
 use App\Models\User;
@@ -181,6 +182,56 @@ class VinculosUnidadTest extends TestCase
             ->where('tipo_vinculo', 'propietario')
             ->where('es_actual', true)
             ->count());
+    }
+
+    public function test_asignar_propietario_promueve_membresia_residente_existente(): void
+    {
+        [$proyecto, $unidad] = $this->estructura();
+        $admin = $this->adminDe($proyecto);
+        $usuario = User::factory()->create(['rol' => Rol::Residente->value]);
+        $usuario->proyectos()->attach($proyecto, ['rol' => Rol::Residente->value, 'estado' => 'activo']);
+
+        Sanctum::actingAs($admin);
+
+        $this->postJson('/api/admin/unidades/'.$unidad->getKey().'/vinculos', [
+            'usuario_id' => $usuario->getKey(),
+            'tipo_vinculo' => 'propietario',
+            'fecha_inicio' => '2026-01-01',
+        ], ['X-Proyecto-Id' => (string) $proyecto->getKey()])->assertCreated();
+
+        $this->assertDatabaseHas('proyecto_usuario', [
+            'proyecto_id' => $proyecto->getKey(),
+            'usuario_id' => $usuario->getKey(),
+            'rol' => Rol::Propietario->value,
+            'estado' => 'activo',
+        ]);
+    }
+
+    public function test_asignar_ocupante_no_degrada_roles_superiores(): void
+    {
+        [$proyecto, $unidad] = $this->estructura();
+        $admin = $this->adminDe($proyecto);
+        $otroAdmin = $this->adminDe($proyecto);
+        $propietario = User::factory()->create(['rol' => Rol::Propietario->value]);
+        $propietario->proyectos()->attach($proyecto, ['rol' => Rol::Propietario->value, 'estado' => 'activo']);
+
+        Sanctum::actingAs($admin);
+
+        foreach ([[$otroAdmin, Rol::Administrador], [$propietario, Rol::Propietario]] as [$usuario, $rolEsperado]) {
+            $this->postJson('/api/admin/unidades/'.$unidad->getKey().'/vinculos', [
+                'usuario_id' => $usuario->getKey(),
+                'tipo_vinculo' => 'arrendatario',
+                'fecha_inicio' => '2026-01-01',
+            ], ['X-Proyecto-Id' => (string) $proyecto->getKey()])->assertCreated();
+
+            $this->assertSame(
+                $rolEsperado->value,
+                ProyectoUsuario::query()
+                    ->where('proyecto_id', $proyecto->getKey())
+                    ->where('usuario_id', $usuario->getKey())
+                    ->value('rol'),
+            );
+        }
     }
 
     /** @return array{Proyecto, UnidadPrincipal} */

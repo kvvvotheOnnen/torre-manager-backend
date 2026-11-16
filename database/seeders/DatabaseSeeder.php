@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Paquete;
 use App\Models\Proyecto;
+use App\Models\ProyectoUsuario;
 use App\Models\UnidadPrincipal;
 use App\Models\UnidadUsuario;
 use App\Models\User;
@@ -36,7 +37,8 @@ final class DatabaseSeeder extends Seeder
             'password' => Hash::make(env('ADMIN_PASSWORD', 'password')),
             'proyecto_id' => $proyecto->getKey(),
         ]);
-        $admin->proyectos()->sync([
+        $this->asegurarMembresia($admin, $proyecto->getKey(), Rol::Administrador);
+        $admin->proyectos()->syncWithoutDetaching([
             $proyecto->getKey() => ['rol' => Rol::Administrador->value, 'estado' => 'activo'],
         ]);
         DB::table('administrador_proyecto')->insertOrIgnore([
@@ -53,8 +55,18 @@ final class DatabaseSeeder extends Seeder
             'rol' => Rol::Residente->value,
             'proyecto_id' => $proyecto->getKey(),
         ]);
+        $this->asegurarMembresia($residente, $proyecto->getKey(), Rol::Residente);
 
-        // Asigna el residente a la unidad Edificio-801
+        $propietario = User::factory()->create([
+            'nombre' => 'Propietario Demo',
+            'email' => env('PROPIETARIO_EMAIL', 'propietario@torremanager.test'),
+            'password' => Hash::make(env('PROPIETARIO_PASSWORD', 'password')),
+            'rol' => Rol::Propietario->value,
+            'proyecto_id' => $proyecto->getKey(),
+        ]);
+        $this->asegurarMembresia($propietario, $proyecto->getKey(), Rol::Propietario);
+
+        // El residente ocupa la unidad Edificio-801 y el propietario demo es su dueño.
         $unidad = UnidadPrincipal::query()
             ->where('identificador', 'Edificio-801')
             ->whereHas('agrupacion', fn ($q) => $q->where('proyecto_id', $proyecto->getKey()))
@@ -65,7 +77,7 @@ final class DatabaseSeeder extends Seeder
         if ($unidad !== null) {
             UnidadUsuario::query()->create([
                 'unidad_principal_id' => $unidad->getKey(),
-                'usuario_id' => $residente->getKey(),
+                'usuario_id' => $propietario->getKey(),
                 'tipo_vinculo' => 'propietario',
                 'fecha_inicio' => now()->subYear()->toDateString(),
                 'es_actual' => true,
@@ -73,7 +85,7 @@ final class DatabaseSeeder extends Seeder
             UnidadUsuario::query()->create([
                 'unidad_principal_id' => $unidad->getKey(),
                 'usuario_id' => $residente->getKey(),
-                'tipo_vinculo' => 'residente',
+                'tipo_vinculo' => 'arrendatario',
                 'fecha_inicio' => now()->subMonths(6)->toDateString(),
                 'es_actual' => true,
             ]);
@@ -87,7 +99,7 @@ final class DatabaseSeeder extends Seeder
         if ($unidad802 !== null) {
             UnidadUsuario::query()->create([
                 'unidad_principal_id' => $unidad802->getKey(),
-                'usuario_id' => $residente->getKey(),
+                'usuario_id' => $propietario->getKey(),
                 'tipo_vinculo' => 'propietario',
                 'fecha_inicio' => now()->subYear()->toDateString(),
                 'es_actual' => true,
@@ -117,12 +129,27 @@ final class DatabaseSeeder extends Seeder
             'registrado_por' => $admin->getKey() ?? 1,
         ]);
 
-        User::factory()->create([
+        $conserje = User::factory()->create([
             'nombre' => 'Conserje Demo',
             'email' => env('CONSERJE_EMAIL', 'conserje@torremanager.test'),
             'password' => Hash::make(env('CONSERJE_PASSWORD', 'password')),
             'rol' => Rol::Conserje->value,
             'proyecto_id' => $proyecto->getKey(),
         ]);
+        $this->asegurarMembresia($conserje, $proyecto->getKey(), Rol::Conserje);
+    }
+
+    private function asegurarMembresia(User $usuario, int|string $proyectoId, Rol $rol): void
+    {
+        ProyectoUsuario::query()->firstOrCreate(
+            [
+                'proyecto_id' => $proyectoId,
+                'usuario_id' => $usuario->getKey(),
+            ],
+            [
+                'rol' => $rol->value,
+                'estado' => 'activo',
+            ],
+        );
     }
 }

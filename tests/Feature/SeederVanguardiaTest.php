@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Proyecto;
+use App\Models\ProyectoUsuario;
 use App\Models\UnidadPrincipal;
+use App\Models\UnidadUsuario;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -98,7 +100,7 @@ class SeederVanguardiaTest extends TestCase
             'unidad_principal_id' => $unidad804,
         ]);
 
-        $this->assertSame(4, User::query()->count());
+        $this->assertSame(5, User::query()->count());
         $this->assertDatabaseHas('usuarios', [
             'email' => 'superadmin@torremanager.test',
             'rol' => 'superadmin',
@@ -118,6 +120,55 @@ class SeederVanguardiaTest extends TestCase
             'email' => 'conserje@torremanager.test',
             'rol' => 'conserje',
             'proyecto_id' => $proyecto->getKey(),
+        ]);
+        $this->assertDatabaseHas('usuarios', [
+            'email' => 'propietario@torremanager.test',
+            'rol' => 'propietario',
+            'proyecto_id' => $proyecto->getKey(),
+        ]);
+
+        $this->assertSame(4, ProyectoUsuario::query()->where('proyecto_id', $proyecto->getKey())->count());
+        foreach (['administrador', 'residente', 'conserje', 'propietario'] as $rol) {
+            $this->assertDatabaseHas('proyecto_usuario', [
+                'proyecto_id' => $proyecto->getKey(),
+                'rol' => $rol,
+                'estado' => 'activo',
+            ]);
+        }
+
+        $propietario = User::query()
+            ->where('email', 'propietario@torremanager.test')
+            ->firstOrFail();
+        $residente = User::query()
+            ->where('email', 'residente@torremanager.test')
+            ->firstOrFail();
+        $unidad802 = UnidadPrincipal::query()
+            ->whereHas('agrupacion', fn ($query) => $query->where('proyecto_id', $proyecto->getKey()))
+            ->where('identificador', 'Edificio-802')
+            ->value('id');
+
+        $this->assertSame(3, UnidadUsuario::query()->count());
+        $this->assertDatabaseHas('unidad_usuario', [
+            'unidad_principal_id' => $unidad801,
+            'usuario_id' => $propietario->getKey(),
+            'tipo_vinculo' => 'propietario',
+            'es_actual' => true,
+        ]);
+        $this->assertDatabaseHas('unidad_usuario', [
+            'unidad_principal_id' => $unidad801,
+            'usuario_id' => $residente->getKey(),
+            'tipo_vinculo' => 'arrendatario',
+            'es_actual' => true,
+        ]);
+        $this->assertDatabaseHas('unidad_usuario', [
+            'unidad_principal_id' => $unidad802,
+            'usuario_id' => $propietario->getKey(),
+            'tipo_vinculo' => 'propietario',
+            'es_actual' => true,
+        ]);
+        $this->assertDatabaseHas('unidades_principales', [
+            'id' => $unidad801,
+            'residente_id' => $residente->getKey(),
         ]);
 
         $admin = User::query()

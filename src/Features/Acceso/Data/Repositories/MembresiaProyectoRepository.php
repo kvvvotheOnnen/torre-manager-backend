@@ -50,8 +50,18 @@ final class MembresiaProyectoRepository implements MembresiaProyectoRepositoryIn
             ['rol' => $rol->value, 'estado' => 'activo'],
         );
 
+        $cambios = [];
+
         if ($membresia->estado !== 'activo') {
-            $membresia->update(['estado' => 'activo']);
+            $cambios['estado'] = 'activo';
+        }
+
+        if ($membresia->rol === Rol::Residente->value && $rol === Rol::Propietario) {
+            $cambios['rol'] = Rol::Propietario->value;
+        }
+
+        if ($cambios !== []) {
+            $membresia->update($cambios);
         }
 
         return $this->toEntity($membresia->refresh());
