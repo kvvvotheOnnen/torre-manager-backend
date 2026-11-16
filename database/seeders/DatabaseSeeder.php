@@ -5,9 +5,11 @@ namespace Database\Seeders;
 use App\Models\Paquete;
 use App\Models\Proyecto;
 use App\Models\UnidadPrincipal;
+use App\Models\UnidadUsuario;
 use App\Models\User;
 use Features\Auth\Domain\Entities\Rol;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 final class DatabaseSeeder extends Seeder
@@ -34,7 +36,15 @@ final class DatabaseSeeder extends Seeder
             'password' => Hash::make(env('ADMIN_PASSWORD', 'password')),
             'proyecto_id' => $proyecto->getKey(),
         ]);
-        $admin->proyectos()->sync([$proyecto->getKey()]);
+        $admin->proyectos()->sync([
+            $proyecto->getKey() => ['rol' => Rol::Administrador->value, 'estado' => 'activo'],
+        ]);
+        DB::table('administrador_proyecto')->insertOrIgnore([
+            'proyecto_id' => $proyecto->getKey(),
+            'usuario_id' => $admin->getKey(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         $residente = User::factory()->create([
             'nombre' => 'Residente Demo',
@@ -51,6 +61,38 @@ final class DatabaseSeeder extends Seeder
             ->first();
 
         $unidad?->update(['residente_id' => $residente->getKey()]);
+
+        if ($unidad !== null) {
+            UnidadUsuario::query()->create([
+                'unidad_principal_id' => $unidad->getKey(),
+                'usuario_id' => $residente->getKey(),
+                'tipo_vinculo' => 'propietario',
+                'fecha_inicio' => now()->subYear()->toDateString(),
+                'es_actual' => true,
+            ]);
+            UnidadUsuario::query()->create([
+                'unidad_principal_id' => $unidad->getKey(),
+                'usuario_id' => $residente->getKey(),
+                'tipo_vinculo' => 'residente',
+                'fecha_inicio' => now()->subMonths(6)->toDateString(),
+                'es_actual' => true,
+            ]);
+        }
+
+        $unidad802 = UnidadPrincipal::query()
+            ->where('identificador', 'Edificio-802')
+            ->whereHas('agrupacion', fn ($q) => $q->where('proyecto_id', $proyecto->getKey()))
+            ->first();
+
+        if ($unidad802 !== null) {
+            UnidadUsuario::query()->create([
+                'unidad_principal_id' => $unidad802->getKey(),
+                'usuario_id' => $residente->getKey(),
+                'tipo_vinculo' => 'propietario',
+                'fecha_inicio' => now()->subYear()->toDateString(),
+                'es_actual' => true,
+            ]);
+        }
 
         // Paquetes demo para el residente
         Paquete::query()->create([

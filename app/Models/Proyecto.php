@@ -44,9 +44,18 @@ class Proyecto extends Model
         return $this->hasMany(InstalacionExtra::class);
     }
 
+    public function miembros(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'proyecto_usuario', 'proyecto_id', 'usuario_id')
+            ->using(ProyectoUsuarioPivot::class)
+            ->withPivot(['rol', 'estado'])
+            ->withTimestamps()
+            ->wherePivot('estado', 'activo');
+    }
+
     public function administradores(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'administrador_proyecto', 'proyecto_id', 'usuario_id');
+        return $this->miembros()->wherePivot('rol', 'administrador');
     }
 
     public function toEntity(): ProyectoEntity

@@ -241,6 +241,11 @@ final class InfraestructuraController extends Controller
             'id' => $unidad->id(),
             'agrupacion_id' => $unidad->agrupacionId(),
             'identificador' => $unidad->identificador(),
+            'propietario_id' => $unidad->propietarioId(),
+            'propietario_nombre' => $unidad->propietarioNombre(),
+            'ocupante_id' => $unidad->ocupanteId(),
+            'ocupante_nombre' => $unidad->ocupanteNombre(),
+            'ocupante_tipo' => $unidad->ocupanteTipo(),
         ];
     }
 

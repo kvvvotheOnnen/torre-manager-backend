@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use Features\Acceso\Data\Repositories\MembresiaProyectoRepository;
+use Features\Acceso\Data\Repositories\VinculoUnidadRepository;
+use Features\Acceso\Domain\Repositories\MembresiaProyectoRepositoryInterface;
+use Features\Acceso\Domain\Repositories\VinculoUnidadRepositoryInterface;
 use Features\Asistente\Data\Repositories\DocumentoRepository;
 use Features\Asistente\Data\Repositories\OllamaRepository;
 use Features\Asistente\Data\Services\PdfTextExtractor;
@@ -31,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(MembresiaProyectoRepositoryInterface::class, MembresiaProyectoRepository::class);
+        $this->app->bind(VinculoUnidadRepositoryInterface::class, VinculoUnidadRepository::class);
         $this->app->bind(DocumentoRepositoryInterface::class, DocumentoRepository::class);
         $this->app->bind(ExtractorPdfInterface::class, PdfTextExtractor::class);
         $this->app->bind(ModeloIARepositoryInterface::class, OllamaRepository::class);

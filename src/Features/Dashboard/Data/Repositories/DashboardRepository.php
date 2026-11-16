@@ -51,8 +51,8 @@ final class DashboardRepository implements DashboardRepositoryInterface
         }
 
         $proyectos = $usuario->proyectos()
-            ->where('estado', EstadoProyecto::Completo->value)
-            ->orderBy('nombre')
+            ->where('proyectos.estado', EstadoProyecto::Completo->value)
+            ->orderBy('proyectos.nombre')
             ->get();
 
         if ($usuario->proyecto_id !== null && ! $proyectos->contains('id', $usuario->proyecto_id)) {

@@ -7,9 +7,10 @@ use Features\Auth\Domain\Entities\Rol;
 use Features\Auth\Domain\Entities\Usuario;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -30,7 +31,36 @@ class User extends Authenticatable
 
     public function proyectos(): BelongsToMany
     {
-        return $this->belongsToMany(Proyecto::class, 'administrador_proyecto', 'usuario_id', 'proyecto_id');
+        return $this->belongsToMany(Proyecto::class, 'proyecto_usuario', 'usuario_id', 'proyecto_id')
+            ->using(ProyectoUsuarioPivot::class)
+            ->withPivot(['rol', 'estado'])
+            ->withTimestamps()
+            ->wherePivot('estado', 'activo');
+    }
+
+    public function membresias(): HasMany
+    {
+        return $this->hasMany(ProyectoUsuario::class, 'usuario_id');
+    }
+
+    public function vinculosUnidad(): HasMany
+    {
+        return $this->hasMany(UnidadUsuario::class, 'usuario_id');
+    }
+
+    public function membresiaEn(int|string $proyectoId): ?ProyectoUsuario
+    {
+        return $this->membresias()
+            ->where('proyecto_id', $proyectoId)
+            ->where('estado', 'activo')
+            ->first();
+    }
+
+    public function rolEnProyecto(int|string $proyectoId): ?Rol
+    {
+        $membresia = $this->membresiaEn($proyectoId);
+
+        return $membresia !== null ? Rol::tryFrom($membresia->rol) : null;
     }
 
     /**

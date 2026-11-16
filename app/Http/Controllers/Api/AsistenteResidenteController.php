@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Asistente\ConsultarAsistenteRequest;
+use Features\Acceso\Domain\Services\AccesoProyectoService;
 use Features\Asistente\Domain\Entities\FuenteRespuesta;
 use Features\Asistente\Domain\Entities\RespuestaAsistente;
 use Features\Asistente\Domain\Exceptions\DocumentoNoDisponibleException;
@@ -15,11 +16,25 @@ final class AsistenteResidenteController extends Controller
 {
     public function __construct(
         private readonly ConsultarAsistenteUseCase $consultarAsistente,
+        private readonly AccesoProyectoService $accesoProyecto,
     ) {}
 
     public function consultar(ConsultarAsistenteRequest $request): JsonResponse
     {
-        $proyectoId = $request->user()->proyecto_id;
+        $usuarioId = (string) $request->user()->getAuthIdentifier();
+        $solicitado = $request->header('X-Proyecto-Id') ?? $request->input('proyecto_id');
+        $proyectoIds = $this->accesoProyecto->proyectosIdsDe($usuarioId);
+
+        if ($solicitado !== null && $solicitado !== '') {
+            if (! in_array((int) $solicitado, $proyectoIds, true)) {
+                return response()->json([
+                    'message' => 'No tienes acceso al proyecto solicitado.',
+                ], 403);
+            }
+            $proyectoId = (string) $solicitado;
+        } else {
+            $proyectoId = $proyectoIds[0] ?? null;
+        }
 
         if ($proyectoId === null) {
             return response()->json([

@@ -33,12 +33,52 @@ class UnidadPrincipal extends Model
         return $this->hasMany(UnidadAccesoria::class);
     }
 
+    public function vinculos(): HasMany
+    {
+        return $this->hasMany(UnidadUsuario::class);
+    }
+
+    public function propietarioActual(): ?UnidadUsuario
+    {
+        return $this->vinculos()
+            ->where('tipo_vinculo', 'propietario')
+            ->where('es_actual', true)
+            ->first();
+    }
+
+    public function ocupanteActual(): ?UnidadUsuario
+    {
+        return $this->vinculos()
+            ->whereIn('tipo_vinculo', ['arrendatario', 'residente'])
+            ->where('es_actual', true)
+            ->orderByRaw("case when tipo_vinculo = 'arrendatario' then 0 else 1 end")
+            ->first();
+    }
+
     public function toEntity(): UnidadPrincipalEntity
     {
+        $propietario = null;
+        $ocupante = null;
+
+        if ($this->relationLoaded('vinculos')) {
+            $propietario = $this->vinculos
+                ->first(fn (UnidadUsuario $v) => $v->tipo_vinculo === 'propietario' && $v->es_actual);
+            $ocupante = $this->vinculos
+                ->where('es_actual', true)
+                ->whereIn('tipo_vinculo', ['arrendatario', 'residente'])
+                ->sortBy(fn (UnidadUsuario $v) => $v->tipo_vinculo === 'arrendatario' ? 0 : 1)
+                ->first();
+        }
+
         return new UnidadPrincipalEntity(
             id: (string) $this->getKey(),
             agrupacionId: (string) $this->agrupacion_id,
             identificador: $this->identificador,
+            propietarioId: $propietario?->usuario_id !== null ? (string) $propietario->usuario_id : null,
+            propietarioNombre: $propietario?->usuario?->nombre,
+            ocupanteId: $ocupante?->usuario_id !== null ? (string) $ocupante->usuario_id : null,
+            ocupanteNombre: $ocupante?->usuario?->nombre,
+            ocupanteTipo: $ocupante?->tipo_vinculo,
         );
     }
 }

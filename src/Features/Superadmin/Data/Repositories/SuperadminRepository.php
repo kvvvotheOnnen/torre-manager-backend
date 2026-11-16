@@ -4,6 +4,7 @@ namespace Features\Superadmin\Data\Repositories;
 
 use App\Models\InstalacionExtra;
 use App\Models\Proyecto;
+use App\Models\ProyectoUsuario;
 use App\Models\User;
 use Features\Auth\Domain\Entities\Rol;
 use Features\Superadmin\Domain\Entities\Administrador;
@@ -153,7 +154,7 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
                 );
             }
 
-            $proyecto->administradores()->sync($administradores->modelKeys());
+            $this->sincronizarAdministradores($proyecto, $administradores->modelKeys());
 
             return $proyecto;
         });
@@ -239,7 +240,7 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
                 ->whereNotIn('nombre', $nombresRecibidos)
                 ->delete();
 
-            $proyecto->administradores()->sync($administradores->modelKeys());
+            $this->sincronizarAdministradores($proyecto, $administradores->modelKeys());
         });
 
         return $this->toProyectoDetalle(
@@ -361,7 +362,7 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
             }
 
             if ($administradores !== null) {
-                $proyecto->administradores()->sync($administradores->modelKeys());
+                $this->sincronizarAdministradores($proyecto, $administradores->modelKeys());
             }
         });
 
@@ -425,6 +426,55 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
         });
     }
 
+    /** @param int[] $administradoresIds */
+    private function sincronizarAdministradores(Proyecto $proyecto, array $administradoresIds): void
+    {
+        $administradoresIds = array_map('intval', $administradoresIds);
+
+        foreach ($administradoresIds as $usuarioId) {
+            ProyectoUsuario::query()->updateOrCreate(
+                ['proyecto_id' => $proyecto->getKey(), 'usuario_id' => $usuarioId],
+                ['rol' => 'administrador', 'estado' => 'activo'],
+            );
+        }
+
+        $removidos = ProyectoUsuario::query()
+            ->where('proyecto_id', $proyecto->getKey())
+            ->where('rol', 'administrador')
+            ->whereNotIn('usuario_id', $administradoresIds)
+            ->get();
+
+        foreach ($removidos as $membresia) {
+            $tieneVinculos = DB::table('unidad_usuario')
+                ->where('usuario_id', $membresia->usuario_id)
+                ->where('es_actual', true)
+                ->whereExists(function ($query) use ($proyecto): void {
+                    $query->select(DB::raw(1))
+                        ->from('unidades_principales')
+                        ->join('agrupaciones', 'agrupaciones.id', '=', 'unidades_principales.agrupacion_id')
+                        ->whereColumn('unidades_principales.id', 'unidad_usuario.unidad_principal_id')
+                        ->where('agrupaciones.proyecto_id', $proyecto->getKey());
+                })
+                ->exists();
+
+            $membresia->update([
+                'rol' => $tieneVinculos ? 'residente' : $membresia->rol,
+                'estado' => $tieneVinculos ? 'activo' : 'inactivo',
+            ]);
+        }
+
+        // Compatibilidad temporal con la tabla legacy durante la transición.
+        DB::table('administrador_proyecto')->where('proyecto_id', $proyecto->getKey())->delete();
+        foreach ($administradoresIds as $usuarioId) {
+            DB::table('administrador_proyecto')->insertOrIgnore([
+                'proyecto_id' => $proyecto->getKey(),
+                'usuario_id' => $usuarioId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+    }
+
     public function listarProyectosDelUsuario(string $usuarioId): array
     {
         $usuario = User::query()->find($usuarioId);
@@ -435,15 +485,15 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
 
         if ($usuario->rol === Rol::Superadmin->value) {
             $proyectos = Proyecto::query()
-                ->where('estado', EstadoProyecto::Completo->value)
+                ->where('proyectos.estado', EstadoProyecto::Completo->value)
                 ->with('instalacionesExtra', 'administradores')
-                ->orderBy('nombre')
+                ->orderBy('proyectos.nombre')
                 ->get();
         } else {
             $proyectos = $usuario->proyectos()
-                ->where('estado', EstadoProyecto::Completo->value)
+                ->where('proyectos.estado', EstadoProyecto::Completo->value)
                 ->with('instalacionesExtra', 'administradores')
-                ->orderBy('nombre')
+                ->orderBy('proyectos.nombre')
                 ->get();
 
             if ($usuario->proyecto_id !== null && ! $proyectos->contains('id', $usuario->proyecto_id)) {

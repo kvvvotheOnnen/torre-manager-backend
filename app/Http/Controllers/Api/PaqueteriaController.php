@@ -41,6 +41,8 @@ final class PaqueteriaController extends Controller
             ->with('agrupacion')
             ->findOrFail($validated['unidad_principal_id']);
         $proyectoId = (int) $unidad->agrupacion->proyecto_id;
+        $ocupante = $unidad->ocupanteActual();
+        $residenteId = $ocupante?->usuario_id ?? $unidad->residente_id;
         $usuario = $request->user();
 
         if (! $this->puedeAccederAProyecto($usuario, $proyectoId)) {
@@ -50,7 +52,7 @@ final class PaqueteriaController extends Controller
             return response()->json(['message' => 'La unidad no pertenece al proyecto indicado.'], 422);
         }
         if (isset($validated['residente_id'])
-            && (int) $validated['residente_id'] !== (int) $unidad->residente_id) {
+            && (int) $validated['residente_id'] !== (int) $residenteId) {
             return response()->json(['message' => 'El residente no corresponde a la unidad indicada.'], 422);
         }
 
@@ -62,7 +64,7 @@ final class PaqueteriaController extends Controller
             $paquete = $this->registrarUseCase->execute([
                 'proyecto_id' => $proyectoId,
                 'unidad_principal_id' => $unidad->getKey(),
-                'residente_id' => $unidad->residente_id,
+                'residente_id' => $residenteId,
                 'descripcion' => $validated['descripcion'],
                 'remitente' => $validated['remitente'],
                 'foto_path' => $fotoPath,
@@ -147,16 +149,30 @@ final class PaqueteriaController extends Controller
             $query->whereHas('agrupacion', fn ($q) => $q->whereIn('proyecto_id', $proyectoIds));
         }
 
-        $unidades = $query->get(['id', 'agrupacion_id', 'identificador', 'residente_id']);
+        $unidades = $query->with('vinculos.usuario')->get(['id', 'agrupacion_id', 'identificador', 'residente_id']);
 
         return response()->json([
-            'unidades' => $unidades->map(fn ($u) => [
-                'id' => $u->getKey(),
-                'identificador' => $u->identificador,
-                'agrupacion' => $u->agrupacion?->nombre,
-                'proyecto_id' => $u->agrupacion?->proyecto_id,
-                'residente_id' => $u->residente_id,
-            ])->values(),
+            'unidades' => $unidades->map(function ($u) {
+                $propietario = $u->vinculos
+                    ->first(fn ($v) => $v->tipo_vinculo === 'propietario' && $v->es_actual);
+                $ocupante = $u->vinculos
+                    ->where('es_actual', true)
+                    ->whereIn('tipo_vinculo', ['arrendatario', 'residente'])
+                    ->sortBy(fn ($v) => $v->tipo_vinculo === 'arrendatario' ? 0 : 1)
+                    ->first();
+
+                return [
+                    'id' => $u->getKey(),
+                    'identificador' => $u->identificador,
+                    'agrupacion' => $u->agrupacion?->nombre,
+                    'proyecto_id' => $u->agrupacion?->proyecto_id,
+                    'residente_id' => $ocupante?->usuario_id ?? $u->residente_id,
+                    'propietario_id' => $propietario?->usuario_id,
+                    'propietario_nombre' => $propietario?->usuario?->nombre,
+                    'ocupante_id' => $ocupante?->usuario_id,
+                    'ocupante_nombre' => $ocupante?->usuario?->nombre,
+                ];
+            })->values(),
         ]);
     }
 
@@ -182,8 +198,10 @@ final class PaqueteriaController extends Controller
         if ((int) $unidad->agrupacion->proyecto_id !== (int) $paqueteActual->proyecto_id) {
             return response()->json(['message' => 'La unidad debe pertenecer al proyecto del paquete.'], 422);
         }
+        $ocupante = $unidad->ocupanteActual();
+        $residenteId = $ocupante?->usuario_id ?? $unidad->residente_id;
         if (isset($validated['residente_id'])
-            && (int) $validated['residente_id'] !== (int) $unidad->residente_id) {
+            && (int) $validated['residente_id'] !== (int) $residenteId) {
             return response()->json(['message' => 'El residente no corresponde a la unidad indicada.'], 422);
         }
 
@@ -194,7 +212,7 @@ final class PaqueteriaController extends Controller
         if (array_key_exists('remitente', $validated)) {
             $datos['remitente'] = $validated['remitente'];
         }
-        $datos['residente_id'] = $unidad->residente_id;
+        $datos['residente_id'] = $residenteId;
         $datos['unidad_principal_id'] = $unidad->getKey();
 
         $fotoPath = $request->hasFile('foto')

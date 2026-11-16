@@ -351,7 +351,7 @@ final class InfraestructuraRepository implements InfraestructuraRepositoryInterf
         }
 
         $agrupaciones = $proyecto->agrupaciones()
-            ->with('unidadesPrincipales.unidadesAccesorias')
+            ->with(['unidadesPrincipales.unidadesAccesorias', 'unidadesPrincipales.vinculos.usuario'])
             ->orderBy('nombre')
             ->get()
             ->map(static function (Agrupacion $agrupacion): ArbolAgrupacion {

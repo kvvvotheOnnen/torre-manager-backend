@@ -99,7 +99,7 @@ class AsistenteTest extends TestCase
             ['Accept' => 'application/json'],
         );
 
-        $response->assertForbidden();
+        $response->assertNotFound();
     }
 
     public function test_admin_puede_eliminar_el_documento(): void

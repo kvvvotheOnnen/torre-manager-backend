@@ -3,6 +3,7 @@
 namespace Features\Paqueteria\Data\Repositories;
 
 use App\Models\Paquete;
+use App\Models\UnidadUsuario;
 use App\Models\User;
 use Features\Auth\Domain\Entities\Rol;
 use Features\Paqueteria\Domain\Entities\Paquete as PaqueteEntity;
@@ -34,9 +35,19 @@ final class PaqueteriaRepository implements PaqueteriaRepositoryInterface
 
     public function listar(string $usuarioId, string $rol, ?string $proyectoId = null): array
     {
-        if ($rol === Rol::Residente->value) {
+        if (in_array($rol, [Rol::Residente->value, Rol::Propietario->value], true)) {
+            $unidades = UnidadUsuario::query()
+                ->where('usuario_id', $usuarioId)
+                ->pluck('unidad_principal_id')
+                ->all();
+
             $paquetes = Paquete::query()
-                ->where('residente_id', $usuarioId)
+                ->where(function ($query) use ($usuarioId, $unidades): void {
+                    $query->where('residente_id', $usuarioId);
+                    if ($unidades !== []) {
+                        $query->orWhereIn('unidad_principal_id', $unidades);
+                    }
+                })
                 ->with(['unidadPrincipal', 'registradoPor'])
                 ->orderByDesc('fecha_recepcion')
                 ->get();

@@ -8,6 +8,7 @@ use App\Http\Requests\Superadmin\CrearAdministradorRequest;
 use App\Http\Requests\Superadmin\CrearProyectoRequest;
 use App\Http\Requests\Superadmin\GuardarPasoProyectoBorradorRequest;
 use App\Http\Requests\Superadmin\IniciarProyectoBorradorRequest;
+use Features\Acceso\Domain\Services\AccesoProyectoService;
 use Features\Superadmin\Domain\Entities\Administrador;
 use Features\Superadmin\Domain\Entities\InstalacionExtra;
 use Features\Superadmin\Domain\Entities\ModuloSistema;
@@ -43,6 +44,7 @@ final class SuperadminController extends Controller
         private readonly IniciarProyectoBorradorUseCase $iniciarProyectoBorradorUseCase,
         private readonly GuardarPasoProyectoUseCase $guardarPasoProyectoUseCase,
         private readonly DescartarProyectoBorradorUseCase $descartarProyectoBorradorUseCase,
+        private readonly AccesoProyectoService $accesoProyecto,
     ) {}
 
     public function proyectos(): JsonResponse
@@ -184,9 +186,14 @@ final class SuperadminController extends Controller
             return response()->json(['message' => $exception->getMessage()], 404);
         }
 
+        $usuarioId = (string) auth()->id();
+
         return response()->json([
             'proyectos' => array_map(
-                fn (ProyectoDetalle $proyecto) => $this->serializarProyectoDetalle($proyecto),
+                fn (ProyectoDetalle $proyecto) => [
+                    ...$this->serializarProyectoDetalle($proyecto),
+                    'rol' => $this->accesoProyecto->rolEn($usuarioId, $proyecto->id())?->value,
+                ],
                 $proyectos,
             ),
         ]);
