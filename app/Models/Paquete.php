@@ -61,7 +61,7 @@ class Paquete extends Model
     public function fotoUrl(): ?string
     {
         return $this->foto_path !== null
-            ? Storage::disk('public')->url($this->foto_path)
+            ? Storage::disk((string) config('archivos.disco', 'public'))->url($this->foto_path)
             : null;
     }
 

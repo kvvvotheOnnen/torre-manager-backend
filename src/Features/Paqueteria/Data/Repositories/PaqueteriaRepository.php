@@ -5,15 +5,17 @@ namespace Features\Paqueteria\Data\Repositories;
 use App\Models\Paquete;
 use App\Models\UnidadUsuario;
 use App\Models\User;
+use Features\Archivos\Domain\Contracts\AlmacenArchivos;
 use Features\Auth\Domain\Entities\Rol;
 use Features\Paqueteria\Domain\Entities\Paquete as PaqueteEntity;
 use Features\Paqueteria\Domain\Exceptions\PaqueteNoEncontradoException;
 use Features\Paqueteria\Domain\Exceptions\PaqueteYaRetiradoException;
 use Features\Paqueteria\Domain\Repositories\PaqueteriaRepositoryInterface;
-use Illuminate\Support\Facades\Storage;
 
 final class PaqueteriaRepository implements PaqueteriaRepositoryInterface
 {
+    public function __construct(private readonly AlmacenArchivos $almacen) {}
+
     public function registrar(array $datos): PaqueteEntity
     {
         $paquete = Paquete::query()->create([
@@ -131,7 +133,7 @@ final class PaqueteriaRepository implements PaqueteriaRepositoryInterface
         }
 
         if (isset($campos['foto_path']) && $fotoAnterior !== null) {
-            Storage::disk('public')->delete($fotoAnterior);
+            $this->almacen->eliminar($fotoAnterior);
         }
 
         $paquete->load('unidadPrincipal');

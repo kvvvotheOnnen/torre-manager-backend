@@ -159,6 +159,7 @@ final class DatabaseSeeder extends Seeder
         $this->asegurarMembresia($conserje, $proyecto->getKey(), Rol::Conserje);
 
         $this->call(SolicitudResidenteSeeder::class);
+        $this->call(TrabajadoresServicioSeeder::class);
     }
 
     private function asegurarMembresia(User $usuario, int|string $proyectoId, Rol $rol): void

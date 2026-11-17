@@ -4,9 +4,11 @@ use App\Http\Controllers\Api\AsistenteAdminController;
 use App\Http\Controllers\Api\AsistenteResidenteController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\FuncionesDashboardController;
 use App\Http\Controllers\Api\InfraestructuraController;
 use App\Http\Controllers\Api\PaqueteriaController;
 use App\Http\Controllers\Api\ResidenteController;
+use App\Http\Controllers\Api\ServiciosController;
 use App\Http\Controllers\Api\SolicitudResidenteController;
 use App\Http\Controllers\Api\SuperadminController;
 use App\Http\Controllers\Api\VinculoUnidadController;
@@ -26,6 +28,7 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
     Route::get('mis-proyectos', [SuperadminController::class, 'misProyectos']);
     Route::get('mis-vinculos', [VinculoUnidadController::class, 'misVinculos']);
     Route::get('mis-unidades', [VinculoUnidadController::class, 'misUnidades']);
+    Route::get('dashboard/funciones', FuncionesDashboardController::class);
 });
 
 Route::middleware(['auth:sanctum', 'role.proyecto:administrador,superadmin,propietario,residente,conserje'])->group(function (): void {
@@ -66,6 +69,16 @@ Route::middleware(['auth:sanctum', 'role.proyecto:conserje,administrador,superad
     Route::post('paqueteria', [PaqueteriaController::class, 'registrar']);
     Route::put('paqueteria/{id}', [PaqueteriaController::class, 'actualizar'])->whereNumber('id');
     Route::patch('paqueteria/{id}/retirar', [PaqueteriaController::class, 'retirar'])->whereNumber('id');
+});
+
+Route::middleware(['auth:sanctum', 'puede:servicios.ver'])->group(function (): void {
+    Route::get('servicios', [ServiciosController::class, 'index']);
+});
+
+Route::middleware(['auth:sanctum', 'puede:servicios.gestionar'])->group(function (): void {
+    Route::post('servicios', [ServiciosController::class, 'store']);
+    Route::put('servicios/{id}', [ServiciosController::class, 'update'])->whereNumber('id');
+    Route::delete('servicios/{id}', [ServiciosController::class, 'destroy'])->whereNumber('id');
 });
 
 Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->group(function (): void {

@@ -31,7 +31,7 @@ class DashboardModulosTest extends TestCase
 
         $modulos = collect($response->json('modulos'));
 
-        $this->assertCount(11, $modulos);
+        $this->assertCount(12, $modulos);
         $this->assertNull($modulos->firstWhere('id', 'infraestructura'));
 
         foreach ([
@@ -70,7 +70,7 @@ class DashboardModulosTest extends TestCase
             $response->assertOk();
             $modulos = collect($response->json('modulos'));
 
-            $this->assertCount(11, $modulos);
+            $this->assertCount(12, $modulos);
             $this->assertNull($modulos->firstWhere('id', 'infraestructura'));
 
             foreach ([
@@ -102,7 +102,7 @@ class DashboardModulosTest extends TestCase
 
         $modulos = collect($response->json('modulos'));
 
-        $this->assertCount(11, $modulos);
+        $this->assertCount(12, $modulos);
         $infraestructura = $modulos->firstWhere('id', 'infraestructura');
         $this->assertTrue($infraestructura['habilitado']);
         $this->assertSame('proyecto', $infraestructura['tipo']);

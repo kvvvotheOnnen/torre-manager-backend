@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Paquete as PaqueteModel;
 use App\Models\UnidadPrincipal;
 use App\Models\User;
+use Features\Archivos\Domain\Contracts\AlmacenArchivos;
 use Features\Paqueteria\Domain\Exceptions\PaqueteNoEncontradoException;
 use Features\Paqueteria\Domain\Exceptions\PaqueteYaRetiradoException;
 use Features\Paqueteria\Domain\UseCases\ActualizarPaqueteUseCase;
@@ -14,7 +15,6 @@ use Features\Paqueteria\Domain\UseCases\MarcarPaqueteRetiradoUseCase;
 use Features\Paqueteria\Domain\UseCases\RegistrarPaqueteUseCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 final class PaqueteriaController extends Controller
@@ -24,6 +24,7 @@ final class PaqueteriaController extends Controller
         private readonly ListarPaquetesUseCase $listarUseCase,
         private readonly MarcarPaqueteRetiradoUseCase $marcarRetiradoUseCase,
         private readonly ActualizarPaqueteUseCase $actualizarUseCase,
+        private readonly AlmacenArchivos $almacen,
     ) {}
 
     public function registrar(Request $request): JsonResponse
@@ -56,8 +57,9 @@ final class PaqueteriaController extends Controller
             return response()->json(['message' => 'El residente no corresponde a la unidad indicada.'], 422);
         }
 
-        $fotoPath = $request->hasFile('foto')
-            ? $request->file('foto')->store('paquetes', 'public')
+        $foto = $request->hasFile('foto') ? $request->file('foto') : null;
+        $fotoPath = $foto !== null
+            ? $this->almacen->guardar($foto->get(), $foto->getClientOriginalName(), 'paquetes')
             : null;
 
         try {
@@ -72,7 +74,7 @@ final class PaqueteriaController extends Controller
             ]);
         } catch (Throwable $exception) {
             if ($fotoPath !== null) {
-                Storage::disk('public')->delete($fotoPath);
+                $this->almacen->eliminar($fotoPath);
             }
 
             throw $exception;
@@ -87,7 +89,7 @@ final class PaqueteriaController extends Controller
             'descripcion' => $paquete->descripcion(),
             'remitente' => $paquete->remitente(),
             'foto_url' => $paquete->fotoPath() !== null
-                ? Storage::disk('public')->url($paquete->fotoPath())
+                ? $this->almacen->url($paquete->fotoPath())
                 : null,
             'fecha_recepcion' => $paquete->fechaRecepcion(),
             'estado' => $paquete->estado(),
@@ -124,7 +126,7 @@ final class PaqueteriaController extends Controller
                     'descripcion' => $p->descripcion(),
                     'remitente' => $p->remitente(),
                     'foto_url' => $p->fotoPath() !== null
-                        ? Storage::disk('public')->url($p->fotoPath())
+                        ? $this->almacen->url($p->fotoPath())
                         : null,
                     'fecha_recepcion' => $p->fechaRecepcion(),
                     'estado' => $p->estado(),
@@ -215,8 +217,9 @@ final class PaqueteriaController extends Controller
         $datos['residente_id'] = $residenteId;
         $datos['unidad_principal_id'] = $unidad->getKey();
 
-        $fotoPath = $request->hasFile('foto')
-            ? $request->file('foto')->store('paquetes', 'public')
+        $foto = $request->hasFile('foto') ? $request->file('foto') : null;
+        $fotoPath = $foto !== null
+            ? $this->almacen->guardar($foto->get(), $foto->getClientOriginalName(), 'paquetes')
             : null;
         if ($fotoPath !== null) {
             $datos['foto_path'] = $fotoPath;
@@ -226,19 +229,19 @@ final class PaqueteriaController extends Controller
             $paquete = $this->actualizarUseCase->execute($id, $datos);
         } catch (PaqueteNoEncontradoException) {
             if ($fotoPath !== null) {
-                Storage::disk('public')->delete($fotoPath);
+                $this->almacen->eliminar($fotoPath);
             }
 
             return response()->json(['message' => 'Paquete no encontrado.'], 404);
         } catch (PaqueteYaRetiradoException $exception) {
             if ($fotoPath !== null) {
-                Storage::disk('public')->delete($fotoPath);
+                $this->almacen->eliminar($fotoPath);
             }
 
             return response()->json(['message' => $exception->getMessage()], 422);
         } catch (Throwable $exception) {
             if ($fotoPath !== null) {
-                Storage::disk('public')->delete($fotoPath);
+                $this->almacen->eliminar($fotoPath);
             }
             throw $exception;
         }
@@ -252,7 +255,7 @@ final class PaqueteriaController extends Controller
             'descripcion' => $paquete->descripcion(),
             'remitente' => $paquete->remitente(),
             'foto_url' => $paquete->fotoPath() !== null
-                ? Storage::disk('public')->url($paquete->fotoPath())
+                ? $this->almacen->url($paquete->fotoPath())
                 : null,
             'fecha_recepcion' => $paquete->fechaRecepcion(),
             'estado' => $paquete->estado(),
@@ -289,7 +292,7 @@ final class PaqueteriaController extends Controller
             'descripcion' => $paquete->descripcion(),
             'remitente' => $paquete->remitente(),
             'foto_url' => $paquete->fotoPath() !== null
-                ? Storage::disk('public')->url($paquete->fotoPath())
+                ? $this->almacen->url($paquete->fotoPath())
                 : null,
             'fecha_recepcion' => $paquete->fechaRecepcion(),
             'estado' => $paquete->estado(),
