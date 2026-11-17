@@ -37,6 +37,10 @@ class AuthController extends Controller
                 'nombre' => $usuario->nombre(),
                 'correo' => $usuario->correo(),
                 'rol' => $usuario->rol()->value,
+                'rut' => $usuario->rut(),
+                'telefono' => $usuario->telefono(),
+                'telefono_emergencia' => $usuario->telefonoEmergencia(),
+                'nombre_emergencia' => $usuario->nombreEmergencia(),
             ],
         ], 200);
     }

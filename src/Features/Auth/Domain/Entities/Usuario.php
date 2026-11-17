@@ -9,6 +9,10 @@ final class Usuario
         private readonly string $nombre,
         private readonly string $correo,
         private readonly Rol $rol,
+        private readonly ?string $rut = null,
+        private readonly ?string $telefono = null,
+        private readonly ?string $telefonoEmergencia = null,
+        private readonly ?string $nombreEmergencia = null,
     ) {}
 
     public function id(): string
@@ -29,5 +33,25 @@ final class Usuario
     public function rol(): Rol
     {
         return $this->rol;
+    }
+
+    public function rut(): ?string
+    {
+        return $this->rut;
+    }
+
+    public function telefono(): ?string
+    {
+        return $this->telefono;
+    }
+
+    public function telefonoEmergencia(): ?string
+    {
+        return $this->telefonoEmergencia;
+    }
+
+    public function nombreEmergencia(): ?string
+    {
+        return $this->nombreEmergencia;
     }
 }

@@ -29,6 +29,10 @@ final class DatabaseSeeder extends Seeder
             'password' => Hash::make(env('SUPERADMIN_PASSWORD', 'password')),
             'rol' => Rol::Superadmin->value,
             'proyecto_id' => null,
+            'rut' => '11111111-1',
+            'telefono' => '+56911111111',
+            'telefono_emergencia' => '+56911111112',
+            'nombre_emergencia' => 'Contacto Superadmin',
         ]);
 
         $admin = User::factory()->administrador()->create([
@@ -36,6 +40,10 @@ final class DatabaseSeeder extends Seeder
             'email' => env('ADMIN_EMAIL', 'admin@torremanager.test'),
             'password' => Hash::make(env('ADMIN_PASSWORD', 'password')),
             'proyecto_id' => $proyecto->getKey(),
+            'rut' => '22222222-2',
+            'telefono' => '+56922222222',
+            'telefono_emergencia' => '+56922222223',
+            'nombre_emergencia' => 'Contacto Administrador',
         ]);
         $this->asegurarMembresia($admin, $proyecto->getKey(), Rol::Administrador);
         $admin->proyectos()->syncWithoutDetaching([
@@ -54,6 +62,10 @@ final class DatabaseSeeder extends Seeder
             'password' => Hash::make(env('RESIDENTE_PASSWORD', 'password')),
             'rol' => Rol::Residente->value,
             'proyecto_id' => $proyecto->getKey(),
+            'rut' => '12345678-5',
+            'telefono' => '+56933333333',
+            'telefono_emergencia' => '+56933333334',
+            'nombre_emergencia' => 'Contacto Residente',
         ]);
         $this->asegurarMembresia($residente, $proyecto->getKey(), Rol::Residente);
 
@@ -63,6 +75,10 @@ final class DatabaseSeeder extends Seeder
             'password' => Hash::make(env('PROPIETARIO_PASSWORD', 'password')),
             'rol' => Rol::Propietario->value,
             'proyecto_id' => $proyecto->getKey(),
+            'rut' => '23456789-6',
+            'telefono' => '+56944444444',
+            'telefono_emergencia' => '+56944444445',
+            'nombre_emergencia' => 'Contacto Propietario',
         ]);
         $this->asegurarMembresia($propietario, $proyecto->getKey(), Rol::Propietario);
 
@@ -135,6 +151,10 @@ final class DatabaseSeeder extends Seeder
             'password' => Hash::make(env('CONSERJE_PASSWORD', 'password')),
             'rol' => Rol::Conserje->value,
             'proyecto_id' => $proyecto->getKey(),
+            'rut' => '34567890-5',
+            'telefono' => '+56955555555',
+            'telefono_emergencia' => '+56955555556',
+            'nombre_emergencia' => 'Contacto Conserje',
         ]);
         $this->asegurarMembresia($conserje, $proyecto->getKey(), Rol::Conserje);
     }

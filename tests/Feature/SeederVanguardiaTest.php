@@ -7,6 +7,7 @@ use App\Models\ProyectoUsuario;
 use App\Models\UnidadPrincipal;
 use App\Models\UnidadUsuario;
 use App\Models\User;
+use Features\Auth\Domain\ValueObjects\Rut;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -134,6 +135,24 @@ class SeederVanguardiaTest extends TestCase
                 'rol' => $rol,
                 'estado' => 'activo',
             ]);
+        }
+
+        $rutsEsperados = [
+            'superadmin@torremanager.test' => '11111111-1',
+            'admin@torremanager.test' => '22222222-2',
+            'residente@torremanager.test' => '12345678-5',
+            'propietario@torremanager.test' => '23456789-6',
+            'conserje@torremanager.test' => '34567890-5',
+        ];
+
+        foreach ($rutsEsperados as $email => $rutEsperado) {
+            $usuario = User::query()->where('email', $email)->firstOrFail();
+
+            $this->assertSame($rutEsperado, $usuario->rut);
+            $this->assertSame($rutEsperado, Rut::desde((string) $usuario->rut)->valor());
+            $this->assertNotNull($usuario->telefono);
+            $this->assertNotNull($usuario->telefono_emergencia);
+            $this->assertNotNull($usuario->nombre_emergencia);
         }
 
         $propietario = User::query()
