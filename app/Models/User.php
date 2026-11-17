@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Features\Auth\Domain\Entities\EstadoUsuario;
 use Features\Auth\Domain\Entities\Rol;
 use Features\Auth\Domain\Entities\Usuario;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,7 +16,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['nombre', 'email', 'password', 'rol', 'proyecto_id', 'rut', 'telefono', 'telefono_emergencia', 'nombre_emergencia'])]
+#[Fillable(['nombre', 'email', 'password', 'rol', 'estado', 'proyecto_id', 'rut', 'telefono', 'telefono_emergencia', 'nombre_emergencia'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -86,6 +87,7 @@ class User extends Authenticatable
             telefono: $this->telefono,
             telefonoEmergencia: $this->telefono_emergencia,
             nombreEmergencia: $this->nombre_emergencia,
+            estado: EstadoUsuario::tryFrom((string) ($this->estado ?? EstadoUsuario::Activo->value)) ?? EstadoUsuario::Activo,
         );
     }
 }

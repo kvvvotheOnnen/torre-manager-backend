@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use Features\Auth\Domain\Exceptions\InvalidCredentialsException;
+use Features\Auth\Domain\Exceptions\UsuarioNoAprobadoException;
 use Features\Auth\Domain\UseCases\LoginUseCase;
 use Illuminate\Http\JsonResponse;
 
@@ -25,6 +26,10 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'Credenciales inválidas.',
             ], 401);
+        } catch (UsuarioNoAprobadoException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], 403);
         }
 
         $usuario = $sesion->usuario();

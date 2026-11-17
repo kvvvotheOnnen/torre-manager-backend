@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Proyecto;
 use App\Models\ProyectoUsuario;
+use App\Models\SolicitudResidente;
 use App\Models\UnidadPrincipal;
 use App\Models\UnidadUsuario;
 use App\Models\User;
@@ -102,6 +103,10 @@ class SeederVanguardiaTest extends TestCase
         ]);
 
         $this->assertSame(5, User::query()->count());
+        $this->assertSame(5, SolicitudResidente::query()->count());
+        $this->assertSame(3, SolicitudResidente::query()->where('estado', 'pendiente')->count());
+        $this->assertSame(1, SolicitudResidente::query()->where('estado', 'aprobada')->count());
+        $this->assertSame(1, SolicitudResidente::query()->where('estado', 'rechazada')->count());
         $this->assertDatabaseHas('usuarios', [
             'email' => 'superadmin@torremanager.test',
             'rol' => 'superadmin',

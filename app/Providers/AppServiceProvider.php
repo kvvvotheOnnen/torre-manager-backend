@@ -13,7 +13,9 @@ use Features\Asistente\Domain\Repositories\DocumentoRepositoryInterface;
 use Features\Asistente\Domain\Repositories\ExtractorPdfInterface;
 use Features\Asistente\Domain\Repositories\ModeloIARepositoryInterface;
 use Features\Auth\Data\Repositories\AuthRepository;
+use Features\Auth\Data\Repositories\UsuarioRepository;
 use Features\Auth\Domain\Repositories\AuthRepositoryInterface;
+use Features\Auth\Domain\Repositories\UsuarioRepositoryInterface;
 use Features\Correo\Data\Repositories\CorreoResendRepository;
 use Features\Correo\Domain\Repositories\CorreoRepositoryInterface;
 use Features\Dashboard\Data\Repositories\DashboardRepository;
@@ -24,6 +26,8 @@ use Features\Paqueteria\Data\Repositories\PaqueteriaRepository;
 use Features\Paqueteria\Domain\Repositories\PaqueteriaRepositoryInterface;
 use Features\Residente\Data\Repositories\ResidenteRepository;
 use Features\Residente\Domain\Repositories\ResidenteRepositoryInterface;
+use Features\SolicitudesResidente\Data\Repositories\SolicitudResidenteRepository;
+use Features\SolicitudesResidente\Domain\Repositories\SolicitudResidenteRepositoryInterface;
 use Features\Superadmin\Data\Repositories\SuperadminRepository;
 use Features\Superadmin\Domain\Repositories\SuperadminRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
@@ -36,6 +40,8 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(MembresiaProyectoRepositoryInterface::class, MembresiaProyectoRepository::class);
+        $this->app->bind(UsuarioRepositoryInterface::class, UsuarioRepository::class);
+        $this->app->bind(SolicitudResidenteRepositoryInterface::class, SolicitudResidenteRepository::class);
         $this->app->bind(VinculoUnidadRepositoryInterface::class, VinculoUnidadRepository::class);
         $this->app->bind(DocumentoRepositoryInterface::class, DocumentoRepository::class);
         $this->app->bind(ExtractorPdfInterface::class, PdfTextExtractor::class);

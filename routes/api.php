@@ -7,12 +7,16 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\InfraestructuraController;
 use App\Http\Controllers\Api\PaqueteriaController;
 use App\Http\Controllers\Api\ResidenteController;
+use App\Http\Controllers\Api\SolicitudResidenteController;
 use App\Http\Controllers\Api\SuperadminController;
 use App\Http\Controllers\Api\VinculoUnidadController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
+
+Route::post('solicitudes-residentes', [SolicitudResidenteController::class, 'crear'])
+    ->middleware('throttle:10,1');
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -47,6 +51,14 @@ Route::middleware(['auth:sanctum', 'role.proyecto:administrador,superadmin'])->p
     Route::get('unidades/{unidad}/vinculos', [VinculoUnidadController::class, 'index'])->whereNumber('unidad');
     Route::post('unidades/{unidad}/vinculos', [VinculoUnidadController::class, 'store'])->whereNumber('unidad');
     Route::delete('vinculos/{vinculo}', [VinculoUnidadController::class, 'destroy'])->whereNumber('vinculo');
+});
+
+Route::middleware(['auth:sanctum', 'role.proyecto:administrador,conserje,superadmin'])->prefix('admin')->group(function (): void {
+    Route::get('solicitudes-residentes', [SolicitudResidenteController::class, 'index']);
+    Route::get('solicitudes-residentes/historial', [SolicitudResidenteController::class, 'historial']);
+    Route::get('solicitudes-residentes/{id}', [SolicitudResidenteController::class, 'show'])->whereNumber('id');
+    Route::post('solicitudes-residentes/{id}/aprobar', [SolicitudResidenteController::class, 'aprobar'])->whereNumber('id');
+    Route::post('solicitudes-residentes/{id}/rechazar', [SolicitudResidenteController::class, 'rechazar'])->whereNumber('id');
 });
 
 Route::middleware(['auth:sanctum', 'role.proyecto:conserje,administrador,superadmin'])->group(function (): void {
