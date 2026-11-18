@@ -144,7 +144,7 @@ class ResolutorAmbitoTest extends TestCase
 
     private function usuarioEn(Proyecto $proyecto, string $rol): User
     {
-        $usuario = User::factory()->create(['rol' => $rol, 'estado' => 'activo']);
+        $usuario = User::factory()->create(['rol' => $rol]);
         $usuario->proyectos()->attach($proyecto, ['rol' => $rol, 'estado' => 'activo']);
 
         return $usuario;

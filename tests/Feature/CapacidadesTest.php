@@ -77,7 +77,7 @@ class CapacidadesTest extends TestCase
 
     private function usuarioEn(string $rol): User
     {
-        $usuario = User::factory()->create(['rol' => $rol, 'estado' => 'activo']);
+        $usuario = User::factory()->create(['rol' => $rol]);
         $usuario->proyectos()->attach($this->proyecto, ['rol' => $rol, 'estado' => 'activo']);
 
         return $usuario;
