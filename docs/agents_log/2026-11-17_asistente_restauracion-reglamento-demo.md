@@ -1,7 +1,7 @@
 # Asistente IA - Restauración del reglamento demo y túnel Ollama
 
 - **Fecha:** 2026-11-17
-- **Branch:** `feature/koke/gestion-residentes/2026-11-16`
+- **Branch:** `feature/koke/propuesta-diseno/2026-11-17`
 - **Repositorio:** `torre-manager-backend`
 
 ## Contexto
