@@ -36,6 +36,21 @@ services:
     networks:
       - torre-net
 
+  ollama-tunnel:
+    build:
+      context: .
+      dockerfile: docker/ollama-tunnel.Dockerfile
+    image: torre-manager/ollama-tunnel
+    restart: unless-stopped
+    environment:
+      SSH_AUTH_SOCK: /ssh-agent
+    volumes:
+      - ${SSH_AUTH_SOCK:?SSH_AUTH_SOCK must be set to reach the Ollama host}:/ssh-agent
+      - ${HOME}/.ssh/config:/ssh-config:ro
+      - ${HOME}/.ssh/known_hosts:/ssh-known:ro
+    networks:
+      - torre-net
+
   db:
     image: postgres:16
     restart: unless-stopped

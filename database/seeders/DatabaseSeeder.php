@@ -158,6 +158,7 @@ final class DatabaseSeeder extends Seeder
         ]);
         $this->asegurarMembresia($conserje, $proyecto->getKey(), Rol::Conserje);
 
+        $this->call(DocumentoReglamentoSeeder::class);
         $this->call(SolicitudResidenteSeeder::class);
     }
 
