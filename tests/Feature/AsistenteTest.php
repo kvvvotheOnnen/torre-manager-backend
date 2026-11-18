@@ -5,9 +5,11 @@ namespace Tests\Feature;
 use App\Models\Documento;
 use App\Models\Proyecto;
 use App\Models\User;
+use Features\Asistente\Data\Repositories\OllamaRepository;
 use Features\Asistente\Domain\Entities\PaginasDocumento;
 use Features\Asistente\Domain\Repositories\ExtractorPdfInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -239,5 +241,43 @@ class AsistenteTest extends TestCase
             ],
             ['Accept' => 'application/json'],
         )->assertStatus(422);
+    }
+
+    public function test_prompt_distingue_preguntas_fuera_de_contexto_y_respuestas_ausentes(): void
+    {
+        $proyecto = Proyecto::factory()->create();
+        $residente = User::factory()->create([
+            'rol' => 'residente',
+            'proyecto_id' => $proyecto->getKey(),
+        ]);
+        Documento::factory()->create(['proyecto_id' => $proyecto->getKey()]);
+        Sanctum::actingAs($residente);
+
+        Http::fake([
+            '*/api/chat' => Http::response([
+                'message' => ['content' => OllamaRepository::RESPUESTA_FUERA_DE_CONTEXTO],
+            ]),
+        ]);
+
+        $this->postJson('/api/residente/asistente/consultas', [
+            'pregunta' => '¿Quién ganó el mundial?',
+        ])
+            ->assertOk()
+            ->assertJsonPath('respuesta', OllamaRepository::RESPUESTA_FUERA_DE_CONTEXTO)
+            ->assertJsonPath('fuentes', []);
+
+        Http::assertSent(function (Request $request): bool {
+            $system = collect($request['messages'])->firstWhere('role', 'system');
+
+            return is_array($system)
+                && str_contains(
+                    (string) ($system['content'] ?? ''),
+                    OllamaRepository::RESPUESTA_FUERA_DE_CONTEXTO,
+                )
+                && str_contains(
+                    (string) ($system['content'] ?? ''),
+                    OllamaRepository::RESPUESTA_NO_ENCONTRADA,
+                );
+        });
     }
 }

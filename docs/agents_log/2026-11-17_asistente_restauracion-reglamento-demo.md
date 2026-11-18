@@ -68,3 +68,19 @@ backend no podía alcanzar el modelo local.
   escritorio, volver a ejecutar `docker compose up -d ollama-tunnel`.
 - Al desplegar en el VPS, mover el servicio `ollama` a la misma red del backend
   y usar `OLLAMA_BASE_URL=http://ollama:11434`.
+
+## Actualización: mensaje para preguntas fuera de contexto
+
+- Se actualizó el `SYSTEM_PROMPT` de `OllamaRepository` para distinguir dos casos:
+  - pregunta fuera del reglamento: "No puedo responder preguntas que estén fuera
+    del contexto del reglamento del proyecto.";
+  - pregunta sobre el reglamento sin respuesta en el PDF: se mantiene
+    "No encuentro esa información en el documento.".
+- Las frases quedaron como constantes públicas del repositorio y el prompt las
+  referencia.
+- Nuevo test en `AsistenteTest` que verifica ambas instrucciones en el mensaje
+  `system` enviado a Ollama y que la respuesta de fallback se propaga sin fuentes.
+- Verificación real: consulta sobre el mundial devuelve la nueva frase; consulta
+  sobre la tarifa del quincho mantiene la frase anterior; consulta sobre la
+  ubicación del quincho responde citando `[Página 1]`.
+- Suite completa: 119 pruebas en verde; `pint --test` sin problemas.
