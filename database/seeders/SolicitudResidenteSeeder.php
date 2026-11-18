@@ -6,6 +6,7 @@ use App\Models\Proyecto;
 use App\Models\SolicitudResidente;
 use App\Models\UnidadPrincipal;
 use App\Models\User;
+use Features\Auth\Domain\Entities\Rol;
 use Illuminate\Database\Seeder;
 
 final class SolicitudResidenteSeeder extends Seeder
@@ -18,9 +19,9 @@ final class SolicitudResidenteSeeder extends Seeder
         $propietario = User::query()->where('email', env('PROPIETARIO_EMAIL', 'propietario@torremanager.test'))->first();
 
         $pendientes = [
-            ['unidad' => 'Edificio-803', 'tipo' => 'propietario', 'principal' => ['Ana Pérez Demo', '12345678-5', 'ana.demo@example.test', '+56960000001'], 'acompanante' => ['Luis Pérez Demo', '23456789-6', 'luis.demo@example.test', '+56960000002']],
-            ['unidad' => 'Edificio-804', 'tipo' => 'arrendatario', 'principal' => ['Carla Rojas Demo', '34567890-5', 'carla.demo@example.test', '+56960000003'], 'acompanante' => null],
-            ['unidad' => 'Edificio-805', 'tipo' => 'propietario', 'principal' => ['Diego Soto Demo', '45678901-3', 'diego.demo@example.test', '+56960000004'], 'acompanante' => null],
+            ['unidad' => 'Edificio-803', 'tipo' => 'propietario', 'principal' => ['Ana Pérez Demo', '15000001-7', 'ana.demo@example.test', '+56960000001'], 'acompanante' => ['Luis Pérez Demo', '15000002-5', 'luis.demo@example.test', '+56960000002']],
+            ['unidad' => 'Edificio-804', 'tipo' => 'arrendatario', 'principal' => ['Carla Rojas Demo', '15000003-3', 'carla.demo@example.test', '+56960000003'], 'acompanante' => null],
+            ['unidad' => 'Edificio-805', 'tipo' => 'propietario', 'principal' => ['Diego Soto Demo', '15000004-1', 'diego.demo@example.test', '+56960000004'], 'acompanante' => null],
         ];
 
         foreach ($pendientes as $indice => $datos) {
@@ -38,10 +39,18 @@ final class SolicitudResidenteSeeder extends Seeder
                 'estado' => 'pendiente',
             ]);
 
-            $this->crearPersona($solicitud, $datos['principal'], $datos['tipo'], true);
+            $principal = $this->crearUsuarioPrincipal($datos['principal'], $datos['tipo']);
+
+            $this->crearPersona(
+                $solicitud,
+                $datos['principal'],
+                $datos['tipo'],
+                true,
+                $principal->getKey(),
+            );
 
             if ($datos['acompanante'] !== null) {
-                $this->crearPersona($solicitud, $datos['acompanante'], 'familiar', false);
+                $this->crearPersona($solicitud, $datos['acompanante'], 'residente', false);
             }
         }
 
@@ -87,6 +96,24 @@ final class SolicitudResidenteSeeder extends Seeder
                 $propietario?->getKey(),
             );
         }
+    }
+
+    /** @param array{0: string, 1: string, 2: string, 3: string} $persona */
+    private function crearUsuarioPrincipal(array $persona, string $tipoSolicitud): User
+    {
+        return User::query()->create([
+            'nombre' => $persona[0],
+            'email' => $persona[2],
+            'password' => env('RESIDENTE_PASSWORD', 'password'),
+            'rol' => $tipoSolicitud === 'propietario'
+                ? Rol::Propietario->value
+                : Rol::Residente->value,
+            'proyecto_id' => null,
+            'rut' => $persona[1],
+            'telefono' => $persona[3],
+            'telefono_emergencia' => '+56961111111',
+            'nombre_emergencia' => 'Contacto de emergencia',
+        ]);
     }
 
     private function unidad(Proyecto $proyecto, string $identificador): ?UnidadPrincipal

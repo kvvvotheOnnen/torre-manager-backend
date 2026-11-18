@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\User;
-use Features\Auth\Domain\Entities\EstadoUsuario;
 use Features\Auth\Domain\Entities\Rol;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -35,7 +34,6 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'password' => static::$password ??= Hash::make('password'),
             'rol' => fake()->randomElement(Rol::cases())->value,
-            'estado' => EstadoUsuario::Activo->value,
             'rut' => $cuerpoRut.'-'.self::calcularDv($cuerpoRut),
             'telefono' => fake()->numerify('+569########'),
             'telefono_emergencia' => fake()->numerify('+569########'),

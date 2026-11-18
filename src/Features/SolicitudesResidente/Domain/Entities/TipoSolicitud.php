@@ -6,4 +6,5 @@ enum TipoSolicitud: string
 {
     case Propietario = 'propietario';
     case Arrendatario = 'arrendatario';
+    case Residente = 'residente';
 }

@@ -3,63 +3,45 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\SolicitudesResidente\CrearSolicitudRequest;
 use App\Http\Requests\SolicitudesResidente\RechazarSolicitudRequest;
 use Features\Acceso\Domain\Services\AccesoProyectoService;
 use Features\Auth\Domain\Entities\Rol;
 use Features\SolicitudesResidente\Domain\Entities\InstalacionUnidad;
-use Features\SolicitudesResidente\Domain\Entities\OrigenSolicitud;
 use Features\SolicitudesResidente\Domain\Entities\PersonaSolicitud;
 use Features\SolicitudesResidente\Domain\Entities\SolicitudResidente;
-use Features\SolicitudesResidente\Domain\Entities\TipoSolicitud;
-use Features\SolicitudesResidente\Domain\Exceptions\SolicitudDuplicadaException;
+use Features\SolicitudesResidente\Domain\Exceptions\SolicitudInvalidaException;
 use Features\SolicitudesResidente\Domain\Exceptions\SolicitudNoEncontradaException;
 use Features\SolicitudesResidente\Domain\Exceptions\SolicitudYaDecididaException;
 use Features\SolicitudesResidente\Domain\UseCases\AprobarSolicitudUseCase;
-use Features\SolicitudesResidente\Domain\UseCases\CrearSolicitudResidenteUseCase;
 use Features\SolicitudesResidente\Domain\UseCases\ListarHistorialSolicitudesUseCase;
+use Features\SolicitudesResidente\Domain\UseCases\ListarMisSolicitudesUseCase;
 use Features\SolicitudesResidente\Domain\UseCases\ListarSolicitudesPendientesUseCase;
 use Features\SolicitudesResidente\Domain\UseCases\ObtenerSolicitudUseCase;
 use Features\SolicitudesResidente\Domain\UseCases\RechazarSolicitudUseCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use InvalidArgumentException;
 
 final class SolicitudResidenteController extends Controller
 {
     public function __construct(
-        private readonly CrearSolicitudResidenteUseCase $crearUseCase,
         private readonly ListarSolicitudesPendientesUseCase $listarPendientesUseCase,
         private readonly ObtenerSolicitudUseCase $obtenerUseCase,
         private readonly ListarHistorialSolicitudesUseCase $historialUseCase,
+        private readonly ListarMisSolicitudesUseCase $misSolicitudesUseCase,
         private readonly AprobarSolicitudUseCase $aprobarUseCase,
         private readonly RechazarSolicitudUseCase $rechazarUseCase,
         private readonly AccesoProyectoService $acceso,
     ) {}
 
-    public function crear(CrearSolicitudRequest $request): JsonResponse
+    public function misSolicitudes(Request $request): JsonResponse
     {
-        try {
-            $solicitud = $this->crearUseCase->execute(
-                (string) $request->integer('proyecto_id'),
-                (string) $request->integer('unidad_principal_id'),
-                TipoSolicitud::from($request->string('tipo_solicitud')->toString()),
-                $request->user() === null
-                    ? OrigenSolicitud::Autoregistro
-                    : (OrigenSolicitud::tryFrom($request->string('origen')->toString()) ?? OrigenSolicitud::Autoregistro),
-                $request->user()?->getAuthIdentifier() !== null
-                    ? (string) $request->user()->getAuthIdentifier()
-                    : null,
-                $request->input('personas', []),
-                $request->input('datos_extra'),
-            );
-        } catch (SolicitudDuplicadaException $exception) {
-            return response()->json(['message' => $exception->getMessage()], 409);
-        } catch (InvalidArgumentException $exception) {
-            return response()->json(['message' => $exception->getMessage()], 422);
-        }
+        $solicitudes = $this->misSolicitudesUseCase->execute(
+            (string) $request->user()->getAuthIdentifier(),
+        );
 
-        return response()->json($this->serializar($solicitud), 201);
+        return response()->json([
+            'solicitudes' => array_map(fn (SolicitudResidente $s) => $this->serializar($s), $solicitudes),
+        ]);
     }
 
     public function index(Request $request): JsonResponse
@@ -135,6 +117,8 @@ final class SolicitudResidenteController extends Controller
             $solicitud = $this->aprobarUseCase->execute($id, (string) $request->user()->getAuthIdentifier());
         } catch (SolicitudYaDecididaException $exception) {
             return response()->json(['message' => $exception->getMessage()], 409);
+        } catch (SolicitudInvalidaException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
         }
 
         return response()->json($this->serializar($solicitud));

@@ -6,63 +6,80 @@
 
 ## Contexto
 
-Task 11 requiere que toda asociación de un nuevo residente a una unidad sea aprobada o
-rechazada por un administrador o conserje. El módulo `solicitudes_residente` ya existía
-en el catálogo global del dashboard, pero no tenía persistencia, endpoints ni flujo de
-decisión.
+Task 11 requiere que la asociación de un residente a una unidad sea aprobada o rechazada
+por un administrador o conserje. El módulo `solicitudes_residente` ya existía en el
+catálogo global del dashboard, pero no tenía persistencia, endpoints ni flujo de decisión.
+
+La creación de cuentas de usuario no pertenece a esta task: se gestionará en otra rama.
+Task 11 solo administra solicitudes y, al aprobar, anexa a un usuario existente a la
+unidad y le otorga acceso al dashboard.
 
 ## Cambios realizados
 
 ### Base de datos
-- `usuarios.estado` (`pendiente`, `activo`, `rechazado`) con default `activo`.
 - `solicitudes_residente` (unidad, tipo, origen, estado, motivo, datos extra, decisores).
 - `solicitud_residente_personas` (datos personales, vínculo, persona principal).
 - Índices por proyecto/estado y unicidad de email/RUT dentro de cada solicitud.
+- No se agrega estado a `usuarios` ni se bloquea el login.
 
 ### Dominio
 - Entidades `SolicitudResidente`, `PersonaSolicitud`, `InstalacionUnidad`.
-- Enums de estado, origen y tipo de solicitud.
-- Casos de uso: crear, listar pendientes, obtener detalle, aprobar, rechazar e historial.
-- La creación registra cuentas en estado `pendiente`; la aprobación las activa y crea
-  membresías y vínculos de unidad. Al aprobar un propietario/arrendatario se cierra el
-  vínculo vigente anterior. Los acompañantes se registran como `familiar`.
-- El historial devuelve las últimas 100 solicitudes decididas.
+- Enums de estado, origen y tipo de solicitud (`propietario`, `arrendatario`, `residente`).
+- Casos de uso: listar pendientes, obtener detalle, aprobar, rechazar, historial y
+  consultar las solicitudes propias.
+- La aprobación exige que la persona principal tenga `usuario_id` y solo crea:
+  - `proyecto_usuario` con rol `propietario` o `residente`.
+  - `unidad_usuario` con tipo `propietario`, `arrendatario` o `residente`.
+- Los acompañantes quedan solo como datos de la solicitud: no reciben cuenta, membresía
+  ni vínculo de unidad.
+- Propietario y arrendatario cierran el vínculo vigente anterior del mismo tipo.
+  `residente` permite múltiples vínculos actuales en la misma unidad.
+- El rechazo solo cambia el estado de la solicitud; no modifica cuentas ni vínculos.
 
 ### API
-- `POST /api/solicitudes-residentes` público con throttling para el futuro wizard de
-  registro.
 - Endpoints administrativos para listar, detallar, aprobar y rechazar, accesibles a
   administrador, conserje y superadmin, con validación del proyecto activo.
-- Login bloqueado para cuentas pendientes o rechazadas con mensajes específicos.
+- `GET /api/mis-solicitudes-residentes` permite al usuario autenticado consultar el
+  estado de su propia solicitud.
+- No existe endpoint para crear usuarios ni para crear solicitudes desde la app.
 - El detalle incluye las bodegas y estacionamientos de la unidad solicitada.
 
 ### Presentación
-- Controlador delgado, FormRequests para creación y rechazo, bindings de repositorios.
+- Controlador delgado, FormRequest de rechazo y bindings de repositorios.
 - Serialización con personas e instalaciones.
 
 ### Datos demo y pruebas
-- Factories de solicitud y personas; seeder con 3 solicitudes pendientes y 2 históricas.
-- 12 pruebas Feature del módulo y actualización del test del seeder.
+- Factories de solicitud y personas.
+- Seeder con 3 solicitudes pendientes y 2 históricas.
+- Las cuentas demo de las personas principales se crean activas, sin membresías ni
+  vínculos, para poder probar la aprobación.
+- No se crean vínculos `familiar` en los flujos nuevos.
 
 ## Decisiones de diseño
 
-- Se mantiene el modelo de usuarios único: no existe tabla `residentes`.
-- La cuenta se crea en estado pendiente al recibir la solicitud y se activa al aprobar.
-- La aprobación reutiliza los casos de uso de Acceso para membresías y vínculos, evitando
-  duplicar reglas de ocupación.
-- El rechazo solo cambia a `rechazado` las cuentas que seguían pendientes.
+- El login es independiente de la aprobación: un usuario puede autenticarse aunque su
+  solicitud esté pendiente.
+- El acceso al dashboard depende exclusivamente de `proyecto_usuario` y
+  `unidad_usuario`, no de `usuarios.proyecto_id` ni de un estado en `usuarios`.
+- No se crean usuarios desde Task 11. La creación de cuentas queda para otra task.
+- El valor `familiar` se mantiene en `TipoVinculo` por compatibilidad, pero no se usa
+  en Task 11.
 
 ## Verificación
 
-- Suite backend: 115 pruebas, 464 aserciones, todas pasan.
+- Suite backend: 116 pruebas, 467 aserciones, todas pasan.
 - `vendor/bin/pint` sobre los archivos modificados sin errores.
-- `migrate:fresh --seed` local con 3 pendientes y 2 históricas.
-- Prueba E2E: listar, aprobar como administrador, rechazar como conserje, verificar
-  membresía y vínculo del aprobado, y confirmar el historial.
-- Sin rebuild ni restart de Docker: no cambiaron Dockerfile ni dependencias.
+- `migrate:fresh --seed` local: 8 usuarios, 3 solicitudes pendientes, 0 vínculos
+  `familiar` de unidad.
+- E2E:
+  - Usuario pendiente inicia sesión, `mis-proyectos` vacío y ve su solicitud pendiente.
+  - Aprobar como admin no cambia el conteo de usuarios y crea membresía/vínculo solo de
+    la persona principal.
+  - Tras aprobar, `mis-proyectos` y `mis-unidades` muestran el proyecto y la unidad.
+  - Rechazar no altera la cuenta y deja el motivo visible en la solicitud propia.
 
 ## Pendientes
 
-- Wizard de registro de residente (Task 12) que consuma el endpoint de creación.
-- Flujo de contraseña/invitación para las cuentas activadas.
-- Mascotas y datos adicionales de la solicitud.
+- Creación de cuentas y flujo de registro en otra rama/task.
+- Wizard de registro de residente.
+- Limpieza futura del valor `familiar` si se decide eliminarlo del modelo.

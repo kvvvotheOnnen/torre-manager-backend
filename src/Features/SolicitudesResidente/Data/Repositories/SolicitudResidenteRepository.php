@@ -5,7 +5,6 @@ namespace Features\SolicitudesResidente\Data\Repositories;
 use App\Models\SolicitudResidente as SolicitudResidenteModel;
 use App\Models\SolicitudResidentePersona as PersonaModel;
 use App\Models\UnidadAccesoria;
-use App\Models\UnidadPrincipal;
 use Features\Acceso\Domain\Entities\TipoVinculo;
 use Features\SolicitudesResidente\Domain\Entities\EstadoSolicitud;
 use Features\SolicitudesResidente\Domain\Entities\InstalacionUnidad;
@@ -17,51 +16,6 @@ use Features\SolicitudesResidente\Domain\Repositories\SolicitudResidenteReposito
 
 final class SolicitudResidenteRepository implements SolicitudResidenteRepositoryInterface
 {
-    public function unidadPerteneceAProyecto(string $unidadId, string $proyectoId): bool
-    {
-        return UnidadPrincipal::query()
-            ->whereKey($unidadId)
-            ->whereHas('agrupacion', fn ($query) => $query->where('proyecto_id', $proyectoId))
-            ->exists();
-    }
-
-    public function existePendienteDuplicada(string $unidadId, array $emails, array $ruts): bool
-    {
-        return SolicitudResidenteModel::query()
-            ->where('unidad_principal_id', $unidadId)
-            ->where('estado', EstadoSolicitud::Pendiente->value)
-            ->whereHas('personas', function ($query) use ($emails, $ruts): void {
-                $query->whereIn('email', $emails)->orWhereIn('rut', $ruts);
-            })
-            ->exists();
-    }
-
-    public function crear(
-        string $proyectoId,
-        string $unidadId,
-        TipoSolicitud $tipoSolicitud,
-        OrigenSolicitud $origen,
-        ?string $solicitadoPorId,
-        array $personas,
-        ?array $datosExtra = null,
-    ): SolicitudResidente {
-        $solicitud = SolicitudResidenteModel::query()->create([
-            'proyecto_id' => $proyectoId,
-            'unidad_principal_id' => $unidadId,
-            'tipo_solicitud' => $tipoSolicitud->value,
-            'origen' => $origen->value,
-            'estado' => EstadoSolicitud::Pendiente->value,
-            'datos_extra' => $datosExtra,
-            'solicitado_por_id' => $solicitadoPorId,
-        ]);
-
-        foreach ($personas as $persona) {
-            $solicitud->personas()->create($persona);
-        }
-
-        return $this->obtener((string) $solicitud->getKey());
-    }
-
     public function obtener(string $id): ?SolicitudResidente
     {
         $solicitud = $this->consultaBase()->find($id);
@@ -94,6 +48,16 @@ final class SolicitudResidenteRepository implements SolicitudResidenteRepository
             ->all();
     }
 
+    public function listarPorUsuario(string $usuarioId): array
+    {
+        return $this->consultaBase()
+            ->whereHas('personas', fn ($query) => $query->where('usuario_id', $usuarioId))
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn (SolicitudResidenteModel $solicitud) => $this->toEntity($solicitud))
+            ->all();
+    }
+
     public function marcarAprobada(string $id, string $decididoPorId): void
     {
         SolicitudResidenteModel::query()->whereKey($id)->update([
@@ -112,11 +76,6 @@ final class SolicitudResidenteRepository implements SolicitudResidenteRepository
             'decidido_por_id' => $decididoPorId,
             'decidido_at' => now(),
         ]);
-    }
-
-    public function actualizarUsuarioIdPersona(string $personaId, string $usuarioId): void
-    {
-        PersonaModel::query()->whereKey($personaId)->update(['usuario_id' => $usuarioId]);
     }
 
     private function consultaBase()

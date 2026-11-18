@@ -13,7 +13,6 @@ final class Usuario
         private readonly ?string $telefono = null,
         private readonly ?string $telefonoEmergencia = null,
         private readonly ?string $nombreEmergencia = null,
-        private readonly EstadoUsuario $estado = EstadoUsuario::Activo,
     ) {}
 
     public function id(): string
@@ -54,10 +53,5 @@ final class Usuario
     public function nombreEmergencia(): ?string
     {
         return $this->nombreEmergencia;
-    }
-
-    public function estado(): EstadoUsuario
-    {
-        return $this->estado;
     }
 }

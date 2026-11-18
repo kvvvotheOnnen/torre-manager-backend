@@ -102,7 +102,7 @@ class SeederVanguardiaTest extends TestCase
             'unidad_principal_id' => $unidad804,
         ]);
 
-        $this->assertSame(5, User::query()->count());
+        $this->assertSame(8, User::query()->count());
         $this->assertSame(5, SolicitudResidente::query()->count());
         $this->assertSame(3, SolicitudResidente::query()->where('estado', 'pendiente')->count());
         $this->assertSame(1, SolicitudResidente::query()->where('estado', 'aprobada')->count());

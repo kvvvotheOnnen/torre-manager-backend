@@ -2,7 +2,6 @@
 
 namespace Features\SolicitudesResidente\Domain\UseCases;
 
-use Features\Auth\Domain\Repositories\UsuarioRepositoryInterface;
 use Features\SolicitudesResidente\Domain\Entities\EstadoSolicitud;
 use Features\SolicitudesResidente\Domain\Entities\SolicitudResidente;
 use Features\SolicitudesResidente\Domain\Exceptions\SolicitudNoEncontradaException;
@@ -14,7 +13,6 @@ final class RechazarSolicitudUseCase
 {
     public function __construct(
         private readonly SolicitudResidenteRepositoryInterface $solicitudes,
-        private readonly UsuarioRepositoryInterface $usuarios,
     ) {}
 
     public function execute(string $solicitudId, string $decididoPorId, string $motivo): SolicitudResidente
@@ -25,12 +23,6 @@ final class RechazarSolicitudUseCase
 
             if ($solicitud->estado() !== EstadoSolicitud::Pendiente) {
                 throw SolicitudYaDecididaException::porqueYaFueDecidida();
-            }
-
-            foreach ($solicitud->personas() as $persona) {
-                if ($persona->usuarioId() !== null) {
-                    $this->usuarios->marcarRechazadoSiPendiente($persona->usuarioId());
-                }
             }
 
             $this->solicitudes->marcarRechazada($solicitudId, $decididoPorId, $motivo);

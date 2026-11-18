@@ -15,15 +15,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
 
-Route::post('solicitudes-residentes', [SolicitudResidenteController::class, 'crear'])
-    ->middleware('throttle:10,1');
-
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
 Route::middleware(['auth:sanctum'])->group(function (): void {
     Route::get('mis-proyectos', [SuperadminController::class, 'misProyectos']);
+    Route::get('mis-solicitudes-residentes', [SolicitudResidenteController::class, 'misSolicitudes']);
     Route::get('mis-vinculos', [VinculoUnidadController::class, 'misVinculos']);
     Route::get('mis-unidades', [VinculoUnidadController::class, 'misUnidades']);
 });
