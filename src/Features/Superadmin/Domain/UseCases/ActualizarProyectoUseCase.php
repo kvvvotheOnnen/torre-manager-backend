@@ -2,6 +2,7 @@
 
 namespace Features\Superadmin\Domain\UseCases;
 
+use Features\Dashboard\Domain\Entities\ModuloGeneral;
 use Features\Superadmin\Domain\Entities\ModuloSistema;
 use Features\Superadmin\Domain\Entities\ProyectoDetalle;
 use Features\Superadmin\Domain\Exceptions\RecursoNoEncontradoException;
@@ -22,6 +23,7 @@ final class ActualizarProyectoUseCase
      * condominio no son editables desde este caso de uso.
      *
      * @param  string[]  $modulos
+     * @param  string[]  $modulosDeshabilitados
      * @param  array<int, array{nombre: string, tipo?: ?string, atributos?: ?array<string, mixed>}>  $instalaciones
      * @param  string[]  $administradoresIds
      *
@@ -33,6 +35,7 @@ final class ActualizarProyectoUseCase
         string $nombre,
         ?string $descripcion,
         array $modulos,
+        array $modulosDeshabilitados,
         array $instalaciones,
         array $administradoresIds,
     ): ProyectoDetalle {
@@ -55,6 +58,17 @@ final class ActualizarProyectoUseCase
 
         if ($modulosValidos === []) {
             throw new InvalidArgumentException('Debes habilitar al menos un módulo.');
+        }
+
+        $modulosDeshabilitadosValidos = [];
+        foreach ($modulosDeshabilitados as $modulo) {
+            $enum = ModuloGeneral::tryFrom((string) $modulo);
+
+            if ($enum === null) {
+                throw new InvalidArgumentException("El módulo global '{$modulo}' no es válido.");
+            }
+
+            $modulosDeshabilitadosValidos[] = $enum->value;
         }
 
         if ($administradoresIds === []) {
@@ -96,6 +110,7 @@ final class ActualizarProyectoUseCase
             $nombre,
             $descripcion !== null ? trim($descripcion) : null,
             $modulosValidos,
+            array_values(array_unique($modulosDeshabilitadosValidos)),
             $instalacionesNormalizadas,
             array_values(array_unique(array_map('strval', $administradoresIds))),
         );

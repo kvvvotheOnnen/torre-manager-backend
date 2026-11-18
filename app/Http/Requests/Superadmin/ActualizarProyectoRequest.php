@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Superadmin;
 
+use Features\Dashboard\Domain\Entities\ModuloGeneral;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ActualizarProyectoRequest extends FormRequest
 {
@@ -21,6 +23,15 @@ class ActualizarProyectoRequest extends FormRequest
             'descripcion' => ['nullable', 'string', 'max:1000'],
             'modulos' => ['required', 'array', 'min:1'],
             'modulos.*' => ['string', 'in:infraestructura'],
+
+            'modulos_deshabilitados' => ['sometimes', 'array'],
+            'modulos_deshabilitados.*' => [
+                'string',
+                Rule::in(array_map(
+                    static fn (ModuloGeneral $modulo) => $modulo->value,
+                    ModuloGeneral::cases(),
+                )),
+            ],
 
             'instalaciones' => ['nullable', 'array'],
             'instalaciones.*.nombre' => ['required_with:instalaciones', 'string', 'max:255', 'distinct'],

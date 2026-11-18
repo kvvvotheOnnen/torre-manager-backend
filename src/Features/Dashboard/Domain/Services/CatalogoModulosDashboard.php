@@ -14,8 +14,9 @@ final class CatalogoModulosDashboard
      * Combina los módulos configurables del proyecto con los módulos globales.
      *
      * Los módulos configurables siempre se informan; si no están presentes en
-     * `proyectos.modulos` se devuelven bloqueados. Los módulos globales siempre
-     * se devuelven habilitados.
+     * `proyectos.modulos` se devuelven bloqueados. Los módulos globales se
+     * devuelven habilitados salvo que el superadmin los haya deshabilitado
+     * para el proyecto en `proyectos.modulos_deshabilitados`.
      *
      * @return ModuloDashboard[]
      */
@@ -25,6 +26,7 @@ final class CatalogoModulosDashboard
             static fn (ModuloSistema $modulo) => $modulo->value,
             $proyecto->modulos(),
         );
+        $deshabilitados = $proyecto->modulosDeshabilitados();
 
         $modulos = [];
 
@@ -52,7 +54,7 @@ final class CatalogoModulosDashboard
                 nombre: $modulo->nombre(),
                 descripcion: $modulo->descripcion(),
                 tipo: TipoModuloDashboard::General,
-                habilitado: true,
+                habilitado: ! in_array($modulo->value, $deshabilitados, true),
             );
         }
 

@@ -15,12 +15,20 @@ class Proyecto extends Model
     /** @use HasFactory<ProyectoFactory> */
     use HasFactory;
 
-    protected $fillable = ['nombre', 'descripcion', 'tipo_condominio', 'modulos', 'estado'];
+    protected $fillable = [
+        'nombre',
+        'descripcion',
+        'tipo_condominio',
+        'modulos',
+        'modulos_deshabilitados',
+        'estado',
+    ];
 
     protected function casts(): array
     {
         return [
             'modulos' => 'array',
+            'modulos_deshabilitados' => 'array',
         ];
     }
 

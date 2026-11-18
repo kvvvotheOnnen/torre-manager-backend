@@ -155,6 +155,7 @@ final class SuperadminController extends Controller
                 $request->string('nombre')->toString(),
                 $request->input('descripcion'),
                 $request->input('modulos', []),
+                array_map('strval', $request->input('modulos_deshabilitados', [])),
                 $request->input('instalaciones', []),
                 array_map('strval', $request->input('admin_ids', [])),
             );
@@ -247,6 +248,7 @@ final class SuperadminController extends Controller
                 static fn (ModuloSistema $modulo) => $modulo->value,
                 $proyecto->modulos(),
             ),
+            'modulos_deshabilitados' => $proyecto->modulosDeshabilitados(),
             'instalaciones_extra' => array_map(
                 static fn (InstalacionExtra $instalacion) => [
                     'id' => $instalacion->id(),

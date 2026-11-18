@@ -70,6 +70,7 @@ interface SuperadminRepositoryInterface
      * con administradores.
      *
      * @param  ModuloSistema[]  $modulos
+     * @param  string[]  $modulosDeshabilitados
      * @param  array<int, array{nombre: string, capacidad: int, descripcion?: ?string, atributos?: ?array<string, mixed>}>  $instalaciones
      * @param  string[]  $administradoresIds
      *
@@ -80,6 +81,7 @@ interface SuperadminRepositoryInterface
         string $nombre,
         ?string $descripcion,
         array $modulos,
+        array $modulosDeshabilitados,
         array $instalaciones,
         array $administradoresIds,
     ): ProyectoDetalle;

@@ -17,7 +17,7 @@
 | 'capacidades'     => capacidades requeridas; todas deben cumplirse
 | 'ambito'          => proyecto | unidad | propio (ver AmbitoFuncion)
 | 'ruta'            => ruta de destino en el cliente
-| 'requiere_modulo' => (opcional) módulo configurable que debe estar habilitado
+| 'requiere_modulo' => (opcional) módulo que debe estar habilitado
 | 'acciones'        => (opcional) nombre de acción => capacidad que la habilita.
 |                      El endpoint devuelve cada una ya resuelta como boolean,
 |                      para que el cliente muestre u oculte botones sin conocer roles.
@@ -35,6 +35,7 @@ return [
             'acciones' => ['gestionar' => 'servicios.gestionar'],
             'ambito' => 'proyecto',
             'ruta' => '/servicios',
+            'requiere_modulo' => 'servicios_recomendados',
         ],
         [
             'id' => 'marketplace',
@@ -50,6 +51,7 @@ return [
             ],
             'ambito' => 'proyecto',
             'ruta' => '/marketplace',
+            'requiere_modulo' => 'marketplace',
         ],
     ],
 ];

@@ -70,6 +70,31 @@ class FuncionesDashboardTest extends TestCase
         $this->assertContains('modulo-apagado', $this->idsPara($admin, $proyecto->refresh()));
     }
 
+    public function test_omite_funciones_de_modulos_globales_deshabilitados(): void
+    {
+        config(['funciones.funciones' => [
+            [
+                'id' => 'paqueteria',
+                'titulo' => 'Paquetería',
+                'descripcion' => 'Encomiendas',
+                'icono' => 'inventory',
+                'capacidades' => [],
+                'ambito' => 'proyecto',
+                'ruta' => '/paqueteria',
+                'requiere_modulo' => 'paqueteria',
+            ],
+        ]]);
+
+        $proyecto = Proyecto::factory()->create(['modulos' => []]);
+        $admin = $this->usuarioEn($proyecto, 'administrador');
+
+        $this->assertSame(['paqueteria'], $this->idsPara($admin, $proyecto));
+
+        $proyecto->update(['modulos_deshabilitados' => ['paqueteria']]);
+
+        $this->assertSame([], $this->idsPara($admin, $proyecto->refresh()));
+    }
+
     public function test_no_expone_funciones_a_quien_no_pertenece_al_proyecto(): void
     {
         $proyecto = Proyecto::factory()->create(['modulos' => []]);

@@ -4,6 +4,7 @@ namespace Features\Dashboard\Domain\UseCases;
 
 use Features\Dashboard\Domain\Contracts\AutorizadorCapacidades;
 use Features\Dashboard\Domain\Entities\Funcion;
+use Features\Dashboard\Domain\Entities\ModuloGeneral;
 use Features\Dashboard\Domain\Entities\FuncionVisible;
 use Features\Dashboard\Domain\Repositories\CatalogoFuncionesRepositoryInterface;
 use Features\Dashboard\Domain\Repositories\DashboardRepositoryInterface;
@@ -28,10 +29,18 @@ final class ListarFuncionesDashboardUseCase
         $proyecto = $this->dashboard->obtenerProyectoDelUsuario($usuarioId, $proyectoIdSolicitado);
 
         $proyectoId = $proyecto->id();
+        $deshabilitados = $proyecto->modulosDeshabilitados();
+
         $modulosHabilitados = array_map(
             static fn (ModuloSistema $modulo): string => $modulo->value,
             $proyecto->modulos(),
         );
+
+        foreach (ModuloGeneral::cases() as $modulo) {
+            if (! in_array($modulo->value, $deshabilitados, true)) {
+                $modulosHabilitados[] = $modulo->value;
+            }
+        }
 
         $visibles = [];
 

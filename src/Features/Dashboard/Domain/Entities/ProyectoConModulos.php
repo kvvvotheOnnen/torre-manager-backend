@@ -8,10 +8,12 @@ final class ProyectoConModulos
 {
     /**
      * @param  ModuloSistema[]  $modulos
+     * @param  string[]  $modulosDeshabilitados
      */
     public function __construct(
         private readonly string $id,
         private readonly array $modulos,
+        private readonly array $modulosDeshabilitados = [],
     ) {}
 
     public function id(): string
@@ -23,5 +25,11 @@ final class ProyectoConModulos
     public function modulos(): array
     {
         return $this->modulos;
+    }
+
+    /** @return string[] */
+    public function modulosDeshabilitados(): array
+    {
+        return $this->modulosDeshabilitados;
     }
 }

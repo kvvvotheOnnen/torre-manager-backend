@@ -7,6 +7,7 @@ use App\Models\Proyecto;
 use App\Models\ProyectoUsuario;
 use App\Models\User;
 use Features\Auth\Domain\Entities\Rol;
+use Features\Dashboard\Domain\Entities\ModuloGeneral;
 use Features\Superadmin\Domain\Entities\Administrador;
 use Features\Superadmin\Domain\Entities\EstadoProyecto;
 use Features\Superadmin\Domain\Entities\ModuloSistema;
@@ -180,6 +181,7 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
         string $nombre,
         ?string $descripcion,
         array $modulos,
+        array $modulosDeshabilitados,
         array $instalaciones,
         array $administradoresIds,
     ): ProyectoDetalle {
@@ -203,6 +205,7 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
             $nombre,
             $descripcion,
             $modulos,
+            $modulosDeshabilitados,
             $instalaciones,
             $administradores,
         ) {
@@ -210,6 +213,7 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
                 'nombre' => $nombre,
                 'descripcion' => $descripcion,
                 'modulos' => array_map(static fn (ModuloSistema $modulo) => $modulo->value, $modulos),
+                'modulos_deshabilitados' => array_values($modulosDeshabilitados),
             ]);
 
             $existentes = $proyecto->instalacionesExtra()->get()->keyBy('nombre');
@@ -531,6 +535,10 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
                 ->map(static fn (User $user) => (string) $user->getKey())
                 ->all(),
             estado: EstadoProyecto::tryFrom((string) $proyecto->estado) ?? EstadoProyecto::Completo,
+            modulosDeshabilitados: array_values(array_filter(
+                array_map('strval', $proyecto->modulos_deshabilitados ?? []),
+                static fn (string $modulo) => ModuloGeneral::tryFrom($modulo) !== null,
+            )),
         );
     }
 }

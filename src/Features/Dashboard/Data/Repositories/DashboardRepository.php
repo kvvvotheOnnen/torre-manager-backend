@@ -5,6 +5,7 @@ namespace Features\Dashboard\Data\Repositories;
 use App\Models\Proyecto;
 use App\Models\User;
 use Features\Auth\Domain\Entities\Rol;
+use Features\Dashboard\Domain\Entities\ModuloGeneral;
 use Features\Dashboard\Domain\Entities\ProyectoConModulos;
 use Features\Dashboard\Domain\Exceptions\ProyectoNoDisponibleException;
 use Features\Dashboard\Domain\Repositories\DashboardRepositoryInterface;
@@ -77,9 +78,15 @@ final class DashboardRepository implements DashboardRepositoryInterface
             $proyecto->modulos ?? [],
         )));
 
+        $deshabilitados = array_values(array_filter(
+            array_map('strval', $proyecto->modulos_deshabilitados ?? []),
+            static fn (string $modulo) => ModuloGeneral::tryFrom($modulo) !== null,
+        ));
+
         return new ProyectoConModulos(
             id: (string) $proyecto->getKey(),
             modulos: $modulos,
+            modulosDeshabilitados: $deshabilitados,
         );
     }
 }

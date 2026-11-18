@@ -8,6 +8,7 @@ final class ProyectoDetalle
      * @param ModuloSistema[] $modulos
      * @param InstalacionExtra[] $instalacionesExtra
      * @param string[] $administradoresIds
+     * @param string[] $modulosDeshabilitados
      */
     public function __construct(
         private readonly string $id,
@@ -18,6 +19,7 @@ final class ProyectoDetalle
         private readonly array $instalacionesExtra,
         private readonly array $administradoresIds,
         private readonly EstadoProyecto $estado = EstadoProyecto::Completo,
+        private readonly array $modulosDeshabilitados = [],
     ) {}
 
     public function esBorrador(): bool
@@ -66,5 +68,11 @@ final class ProyectoDetalle
     public function administradoresIds(): array
     {
         return $this->administradoresIds;
+    }
+
+    /** @return string[] */
+    public function modulosDeshabilitados(): array
+    {
+        return $this->modulosDeshabilitados;
     }
 }
