@@ -31,7 +31,7 @@ class DashboardModulosTest extends TestCase
 
         $modulos = collect($response->json('modulos'));
 
-        $this->assertCount(12, $modulos);
+        $this->assertCount(13, $modulos);
         $this->assertNull($modulos->firstWhere('id', 'infraestructura'));
 
         foreach ([
@@ -46,6 +46,8 @@ class DashboardModulosTest extends TestCase
             'personas_externas_oficios',
             'alertas_noticias',
             'asistente_ia_admin',
+            'servicios_recomendados',
+            'marketplace',
         ] as $id) {
             $modulo = $modulos->firstWhere('id', $id);
             $this->assertNotNull($modulo, "Falta el módulo global {$id}.");
@@ -70,7 +72,7 @@ class DashboardModulosTest extends TestCase
             $response->assertOk();
             $modulos = collect($response->json('modulos'));
 
-            $this->assertCount(12, $modulos);
+            $this->assertCount(13, $modulos);
             $this->assertNull($modulos->firstWhere('id', 'infraestructura'));
 
             foreach ([
@@ -102,7 +104,7 @@ class DashboardModulosTest extends TestCase
 
         $modulos = collect($response->json('modulos'));
 
-        $this->assertCount(12, $modulos);
+        $this->assertCount(13, $modulos);
         $infraestructura = $modulos->firstWhere('id', 'infraestructura');
         $this->assertTrue($infraestructura['habilitado']);
         $this->assertSame('proyecto', $infraestructura['tipo']);

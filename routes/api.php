@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\FuncionesDashboardController;
 use App\Http\Controllers\Api\InfraestructuraController;
+use App\Http\Controllers\Api\MarketplaceController;
 use App\Http\Controllers\Api\PaqueteriaController;
 use App\Http\Controllers\Api\ResidenteController;
 use App\Http\Controllers\Api\ServiciosController;
@@ -79,6 +80,29 @@ Route::middleware(['auth:sanctum', 'puede:servicios.gestionar'])->group(function
     Route::post('servicios', [ServiciosController::class, 'store']);
     Route::put('servicios/{id}', [ServiciosController::class, 'update'])->whereNumber('id');
     Route::delete('servicios/{id}', [ServiciosController::class, 'destroy'])->whereNumber('id');
+});
+
+Route::middleware(['auth:sanctum', 'puede:marketplace.ver'])->prefix('marketplace')->group(function (): void {
+    Route::get('publicaciones', [MarketplaceController::class, 'index']);
+    Route::get('publicaciones/{id}', [MarketplaceController::class, 'show'])->whereNumber('id');
+});
+
+Route::middleware(['auth:sanctum', 'puede:marketplace.publicar'])->prefix('marketplace')->group(function (): void {
+    Route::get('mis-publicaciones', [MarketplaceController::class, 'misPublicaciones']);
+    Route::get('historial', [MarketplaceController::class, 'historial']);
+    Route::post('publicaciones', [MarketplaceController::class, 'store']);
+    Route::put('publicaciones/{id}', [MarketplaceController::class, 'update'])->whereNumber('id');
+    Route::post('publicaciones/{id}/retirar', [MarketplaceController::class, 'retirar'])->whereNumber('id');
+    Route::post('publicaciones/{id}/vender', [MarketplaceController::class, 'vender'])->whereNumber('id');
+});
+
+Route::middleware(['auth:sanctum', 'puede:marketplace.favoritos'])->prefix('marketplace')->group(function (): void {
+    Route::get('favoritos', [MarketplaceController::class, 'favoritos']);
+    Route::put('publicaciones/{id}/favorito', [MarketplaceController::class, 'favorito'])->whereNumber('id');
+});
+
+Route::middleware(['auth:sanctum', 'puede:marketplace.moderar'])->prefix('marketplace')->group(function (): void {
+    Route::delete('publicaciones/{id}', [MarketplaceController::class, 'destroy'])->whereNumber('id');
 });
 
 Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->group(function (): void {

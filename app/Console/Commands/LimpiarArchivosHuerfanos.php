@@ -68,6 +68,13 @@ final class LimpiarArchivosHuerfanos extends Command
                 ->all());
         }
 
+        if (Schema::hasTable('publicaciones_marketplace')) {
+            $rutas = array_merge($rutas, DB::table('publicaciones_marketplace')
+                ->whereNotNull('foto_path')
+                ->pluck('foto_path')
+                ->all());
+        }
+
         $rutas = array_map(static fn (mixed $ruta): string => (string) $ruta, $rutas);
 
         return array_values(array_unique(array_filter($rutas, static fn (string $ruta): bool => trim($ruta) !== '')));

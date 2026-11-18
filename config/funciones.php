@@ -36,5 +36,20 @@ return [
             'ambito' => 'proyecto',
             'ruta' => '/servicios',
         ],
+        [
+            'id' => 'marketplace',
+            'titulo' => 'Marketplace',
+            'descripcion' => 'Compra y vende artículos entre vecinos del condominio.',
+            'icono' => 'storefront',
+            'capacidades' => ['marketplace.ver'],
+            'acciones' => [
+                'publicar' => 'marketplace.publicar',
+                'gestionar' => 'marketplace.gestionar',
+                'moderar' => 'marketplace.moderar',
+                'favoritos' => 'marketplace.favoritos',
+            ],
+            'ambito' => 'proyecto',
+            'ruta' => '/marketplace',
+        ],
     ],
 ];

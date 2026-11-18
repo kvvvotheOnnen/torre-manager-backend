@@ -94,6 +94,34 @@ class ResolutorAmbitoTest extends TestCase
         ));
     }
 
+    public function test_el_ambito_propio_solo_concede_al_dueno_salvo_roles_de_proyecto_completo(): void
+    {
+        $proyecto = Proyecto::factory()->create();
+        $residente = $this->usuarioEn($proyecto, 'residente');
+        $vecino = $this->usuarioEn($proyecto, 'residente');
+        $admin = $this->usuarioEn($proyecto, 'administrador');
+
+        $resolutor = $this->app->make(ResolutorAmbito::class);
+
+        $this->assertTrue($resolutor->puedeAccederA(
+            (string) $residente->getKey(),
+            (string) $proyecto->getKey(),
+            new ReferenciaRecurso('propio', (string) $residente->getKey()),
+        ));
+
+        $this->assertFalse($resolutor->puedeAccederA(
+            (string) $residente->getKey(),
+            (string) $proyecto->getKey(),
+            new ReferenciaRecurso('propio', (string) $vecino->getKey()),
+        ));
+
+        $this->assertTrue($resolutor->puedeAccederA(
+            (string) $admin->getKey(),
+            (string) $proyecto->getKey(),
+            new ReferenciaRecurso('propio', (string) $vecino->getKey()),
+        ));
+    }
+
     /** @return array{0: UnidadPrincipal, 1: UnidadPrincipal} */
     private function dosUnidades(Proyecto $proyecto): array
     {

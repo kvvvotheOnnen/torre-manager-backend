@@ -30,6 +30,8 @@ use Features\Dashboard\Domain\Repositories\CatalogoFuncionesRepositoryInterface;
 use Features\Dashboard\Domain\Repositories\DashboardRepositoryInterface;
 use Features\Infraestructura\Data\Repositories\InfraestructuraRepository;
 use Features\Infraestructura\Domain\Repositories\InfraestructuraRepositoryInterface;
+use Features\Marketplace\Data\Repositories\MarketplaceRepository;
+use Features\Marketplace\Domain\Repositories\MarketplaceRepositoryInterface;
 use Features\Paqueteria\Data\Repositories\PaqueteriaRepository;
 use Features\Paqueteria\Domain\Repositories\PaqueteriaRepositoryInterface;
 use Features\Residente\Data\Repositories\ResidenteRepository;
@@ -66,6 +68,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(InfraestructuraRepositoryInterface::class, InfraestructuraRepository::class);
         $this->app->bind(PaqueteriaRepositoryInterface::class, PaqueteriaRepository::class);
         $this->app->bind(ServiciosRepositoryInterface::class, ServiciosRepository::class);
+        $this->app->bind(MarketplaceRepositoryInterface::class, MarketplaceRepository::class);
         $this->app->bind(ResidenteRepositoryInterface::class, ResidenteRepository::class);
         $this->app->bind(SuperadminRepositoryInterface::class, SuperadminRepository::class);
     }

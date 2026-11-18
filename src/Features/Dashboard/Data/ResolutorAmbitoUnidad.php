@@ -37,13 +37,19 @@ final class ResolutorAmbitoUnidad implements ResolutorAmbito
             return true;
         }
 
+        $rol = $this->acceso->rolEn($usuarioId, $proyectoId);
+        $rolDeProyectoCompleto = $rol !== null
+            && in_array($rol->value, self::ROLES_DE_PROYECTO_COMPLETO, true);
+
+        if ($recurso->tipo() === 'propio') {
+            return $rolDeProyectoCompleto || $recurso->id() === $usuarioId;
+        }
+
         if ($recurso->tipo() !== 'unidad') {
             return false;
         }
 
-        $rol = $this->acceso->rolEn($usuarioId, $proyectoId);
-
-        if ($rol !== null && in_array($rol->value, self::ROLES_DE_PROYECTO_COMPLETO, true)) {
+        if ($rolDeProyectoCompleto) {
             return true;
         }
 

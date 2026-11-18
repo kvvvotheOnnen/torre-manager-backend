@@ -32,6 +32,10 @@ return [
             'paqueteria.gestionar',
             'servicios.ver',
             'servicios.gestionar',
+            'marketplace.ver',
+            'marketplace.publicar',
+            'marketplace.gestionar',
+            'marketplace.moderar',
         ],
 
         'conserje' => [
@@ -43,6 +47,8 @@ return [
             'paqueteria.ver',
             'paqueteria.gestionar',
             'servicios.ver',
+            'marketplace.ver',
+            'marketplace.moderar',
         ],
 
         'propietario' => [
@@ -52,6 +58,9 @@ return [
             'gastos.ver_propio',
             'paqueteria.ver',
             'servicios.ver',
+            'marketplace.ver',
+            'marketplace.publicar',
+            'marketplace.favoritos',
         ],
 
         'residente' => [
@@ -61,6 +70,9 @@ return [
             'gastos.ver_propio',
             'paqueteria.ver',
             'servicios.ver',
+            'marketplace.ver',
+            'marketplace.publicar',
+            'marketplace.favoritos',
         ],
     ],
 ];

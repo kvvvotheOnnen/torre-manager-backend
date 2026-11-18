@@ -23,6 +23,7 @@ enum ModuloGeneral: string
     case AlertasNoticias = 'alertas_noticias';
     case AsistenteIaAdmin = 'asistente_ia_admin';
     case ServiciosRecomendados = 'servicios_recomendados';
+    case Marketplace = 'marketplace';
 
     public function nombre(): string
     {
@@ -39,6 +40,7 @@ enum ModuloGeneral: string
             self::AlertasNoticias => 'Alertas y noticias',
             self::AsistenteIaAdmin => 'IA admin',
             self::ServiciosRecomendados => 'Servicios recomendados',
+            self::Marketplace => 'Marketplace',
         };
     }
 
@@ -57,6 +59,7 @@ enum ModuloGeneral: string
             self::AlertasNoticias => 'Crea alertas y noticias para la comunidad.',
             self::AsistenteIaAdmin => 'Carga el documento PDF que usará la IA para responder a los residentes.',
             self::ServiciosRecomendados => 'Directorio de trabajadores y servicios recomendados para el edificio.',
+            self::Marketplace => 'Compra y vende artículos entre vecinos del condominio.',
         };
     }
 }

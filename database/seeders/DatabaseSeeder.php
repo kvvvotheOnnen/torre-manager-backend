@@ -160,6 +160,7 @@ final class DatabaseSeeder extends Seeder
 
         $this->call(SolicitudResidenteSeeder::class);
         $this->call(TrabajadoresServicioSeeder::class);
+        $this->call(MarketplaceSeeder::class);
     }
 
     private function asegurarMembresia(User $usuario, int|string $proyectoId, Rol $rol): void
