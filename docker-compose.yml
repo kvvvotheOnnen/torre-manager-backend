@@ -42,12 +42,16 @@ services:
       dockerfile: docker/ollama-tunnel.Dockerfile
     image: torre-manager/ollama-tunnel
     restart: unless-stopped
-    environment:
-      SSH_AUTH_SOCK: /ssh-agent
     volumes:
-      - ${SSH_AUTH_SOCK:?SSH_AUTH_SOCK must be set to reach the Ollama host}:/ssh-agent
+      - ${HOME}/.ssh/torre_ollama:/ssh-key:ro
       - ${HOME}/.ssh/config:/ssh-config:ro
       - ${HOME}/.ssh/known_hosts:/ssh-known:ro
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 11434 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     networks:
       - torre-net
 
