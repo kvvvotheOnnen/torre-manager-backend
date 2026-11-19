@@ -25,6 +25,7 @@ final class GuardarPasoProyectoUseCase
 
     /**
      * @param  array<int, array<string, mixed>>|null  $agrupaciones
+     * @param  array<int, array<string, mixed>>|null  $clasificaciones
      * @param  array<int, array<string, mixed>>|null  $instalaciones
      * @param  string[]|null  $modulos
      * @param  string[]|null  $administradoresIds
@@ -38,6 +39,7 @@ final class GuardarPasoProyectoUseCase
         ?string $descripcion = null,
         ?string $tipoCondominio = null,
         ?array $agrupaciones = null,
+        ?array $clasificaciones = null,
         ?array $instalaciones = null,
         ?array $modulos = null,
         ?array $administradoresIds = null,
@@ -88,6 +90,11 @@ final class GuardarPasoProyectoUseCase
             }
         }
 
+        $clasificacionesNormalizadas = null;
+        if ($clasificaciones !== null) {
+            $clasificacionesNormalizadas = $this->normalizarClasificaciones($clasificaciones);
+        }
+
         $instalacionesNormalizadas = null;
         if ($instalaciones !== null) {
             $instalacionesNormalizadas = $this->normalizadorInstalaciones->normalizar($instalaciones);
@@ -113,6 +120,7 @@ final class GuardarPasoProyectoUseCase
             $descripcion,
             $tipo,
             $agrupacionesNormalizadas,
+            $clasificacionesNormalizadas,
             $instalacionesNormalizadas,
             $modulosValidos,
             $administradoresIds,
@@ -138,5 +146,64 @@ final class GuardarPasoProyectoUseCase
         }
 
         return $this->repository->marcarProyectoCompleto($id);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $clasificaciones
+     * @return array<int, array{nombre: string, unidades: array<int, array{agrupacion: string, identificador: string}>}>
+     *
+     * @throws InvalidArgumentException
+     */
+    private function normalizarClasificaciones(array $clasificaciones): array
+    {
+        $normalizadas = [];
+        $nombres = [];
+        $unidadesUsadas = [];
+
+        foreach ($clasificaciones as $item) {
+            $nombre = trim((string) ($item['nombre'] ?? ''));
+
+            if ($nombre === '') {
+                throw new InvalidArgumentException('Cada clasificación de unidades debe tener un nombre.');
+            }
+
+            if (mb_strlen($nombre) > 100) {
+                throw new InvalidArgumentException("El nombre de la clasificación '{$nombre}' supera los 100 caracteres.");
+            }
+
+            $clave = mb_strtolower($nombre);
+
+            if (isset($nombres[$clave])) {
+                throw new InvalidArgumentException("La clasificación '{$nombre}' está repetida.");
+            }
+
+            $nombres[$clave] = true;
+
+            $unidades = [];
+
+            foreach ((array) ($item['unidades'] ?? []) as $unidad) {
+                $agrupacion = trim((string) ($unidad['agrupacion'] ?? ''));
+                $identificador = trim((string) ($unidad['identificador'] ?? ''));
+
+                if ($agrupacion === '' || $identificador === '') {
+                    throw new InvalidArgumentException("Una unidad de la clasificación '{$nombre}' no es válida.");
+                }
+
+                $unidadClave = $agrupacion.'|'.$identificador;
+
+                if (isset($unidadesUsadas[$unidadClave])) {
+                    throw new InvalidArgumentException(
+                        "La unidad '{$identificador}' de '{$agrupacion}' está asignada a más de una clasificación.",
+                    );
+                }
+
+                $unidadesUsadas[$unidadClave] = true;
+                $unidades[] = ['agrupacion' => $agrupacion, 'identificador' => $identificador];
+            }
+
+            $normalizadas[] = ['nombre' => $nombre, 'unidades' => $unidades];
+        }
+
+        return $normalizadas;
     }
 }

@@ -16,7 +16,7 @@ class UnidadPrincipal extends Model
 
     protected $table = 'unidades_principales';
 
-    protected $fillable = ['agrupacion_id', 'identificador', 'residente_id'];
+    protected $fillable = ['agrupacion_id', 'identificador', 'residente_id', 'clasificacion_id'];
 
     public function agrupacion(): BelongsTo
     {
@@ -26,6 +26,11 @@ class UnidadPrincipal extends Model
     public function residente(): BelongsTo
     {
         return $this->belongsTo(User::class, 'residente_id');
+    }
+
+    public function clasificacion(): BelongsTo
+    {
+        return $this->belongsTo(ClasificacionUnidad::class, 'clasificacion_id');
     }
 
     public function unidadesAccesorias(): HasMany

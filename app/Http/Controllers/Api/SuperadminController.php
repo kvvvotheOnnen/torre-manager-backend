@@ -110,6 +110,7 @@ final class SuperadminController extends Controller
                 $request->has('descripcion') ? (string) ($request->input('descripcion') ?? '') : null,
                 $request->has('tipo_condominio') ? $request->string('tipo_condominio')->toString() : null,
                 $request->has('agrupaciones') ? $request->input('agrupaciones', []) : null,
+                $request->has('clasificaciones') ? $request->input('clasificaciones', []) : null,
                 $request->has('instalaciones') ? $request->input('instalaciones', []) : null,
                 $request->has('modulos') ? array_map('strval', $request->input('modulos', [])) : null,
                 $request->has('admin_ids') ? array_map('strval', $request->input('admin_ids', [])) : null,

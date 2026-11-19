@@ -98,6 +98,7 @@ interface SuperadminRepositoryInterface
      *
      * @param  array<int, array{nombre: string, tipo: TipoAgrupacion, identificadores: string[]}>|null  $agrupaciones
      * @param  array<int, array{nombre: string, capacidad: int, descripcion?: ?string, atributos?: ?array<string, mixed>}>|null  $instalaciones
+     * @param  array<int, array{nombre: string, unidades: array<int, array{agrupacion: string, identificador: string}>}>|null  $clasificaciones
      * @param  ModuloSistema[]|null  $modulos
      * @param  string[]|null  $administradoresIds
      *
@@ -109,6 +110,7 @@ interface SuperadminRepositoryInterface
         ?string $descripcion,
         ?TipoCondominio $tipoCondominio,
         ?array $agrupaciones,
+        ?array $clasificaciones,
         ?array $instalaciones,
         ?array $modulos,
         ?array $administradoresIds,

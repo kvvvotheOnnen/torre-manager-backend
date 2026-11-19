@@ -52,6 +52,11 @@ class Proyecto extends Model
         return $this->hasMany(InstalacionExtra::class);
     }
 
+    public function clasificaciones(): HasMany
+    {
+        return $this->hasMany(ClasificacionUnidad::class);
+    }
+
     public function miembros(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'proyecto_usuario', 'proyecto_id', 'usuario_id')

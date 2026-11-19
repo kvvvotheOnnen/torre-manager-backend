@@ -5,6 +5,7 @@ namespace Features\Superadmin\Data\Repositories;
 use App\Models\InstalacionExtra;
 use App\Models\Proyecto;
 use App\Models\ProyectoUsuario;
+use App\Models\UnidadPrincipal;
 use App\Models\User;
 use Features\Auth\Domain\Entities\Rol;
 use Features\Dashboard\Domain\Entities\ModuloGeneral;
@@ -21,6 +22,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 
 final class SuperadminRepository implements SuperadminRepositoryInterface
 {
@@ -273,6 +275,7 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
         ?string $descripcion,
         ?TipoCondominio $tipoCondominio,
         ?array $agrupaciones,
+        ?array $clasificaciones,
         ?array $instalaciones,
         ?array $modulos,
         ?array $administradoresIds,
@@ -302,6 +305,7 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
             $descripcion,
             $tipoCondominio,
             $agrupaciones,
+            $clasificaciones,
             $instalaciones,
             $modulos,
             $administradores,
@@ -352,6 +356,10 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
                 }
             }
 
+            if ($agrupaciones !== null || $resetEstructura) {
+                $this->sincronizarClasificaciones($proyecto, $clasificaciones ?? []);
+            }
+
             if ($instalaciones !== null) {
                 $proyecto->instalacionesExtra()->delete();
 
@@ -371,6 +379,64 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
         });
 
         return $this->buscarProyecto($id);
+    }
+
+    /**
+     * Reemplaza las clasificaciones del proyecto y asigna cada unidad a una sola.
+     *
+     * @param  array<int, array{nombre: string, unidades: array<int, array{agrupacion: string, identificador: string}>}>  $clasificaciones
+     *
+     * @throws InvalidArgumentException
+     */
+    private function sincronizarClasificaciones(Proyecto $proyecto, array $clasificaciones): void
+    {
+        $agrupaciones = $proyecto->agrupaciones()->pluck('nombre', 'id');
+
+        $unidades = UnidadPrincipal::query()
+            ->whereIn('agrupacion_id', $agrupaciones->keys())
+            ->get(['id', 'agrupacion_id', 'identificador']);
+
+        $mapa = [];
+
+        foreach ($unidades as $unidad) {
+            $nombreAgrupacion = (string) $agrupaciones->get($unidad->agrupacion_id);
+            $mapa[$nombreAgrupacion.'|'.$unidad->identificador] = (int) $unidad->getKey();
+        }
+
+        foreach ($clasificaciones as $clasificacion) {
+            foreach ($clasificacion['unidades'] as $unidad) {
+                $clave = $unidad['agrupacion'].'|'.$unidad['identificador'];
+
+                if (! isset($mapa[$clave])) {
+                    throw new InvalidArgumentException(
+                        "La unidad '{$unidad['identificador']}' de '{$unidad['agrupacion']}' no existe en la estructura del proyecto.",
+                    );
+                }
+            }
+        }
+
+        UnidadPrincipal::query()
+            ->whereIn('agrupacion_id', $agrupaciones->keys())
+            ->update(['clasificacion_id' => null]);
+
+        $proyecto->clasificaciones()->delete();
+
+        foreach ($clasificaciones as $clasificacion) {
+            $creada = $proyecto->clasificaciones()->create([
+                'nombre' => $clasificacion['nombre'],
+            ]);
+
+            $ids = array_map(
+                static fn (array $unidad): int => $mapa[$unidad['agrupacion'].'|'.$unidad['identificador']],
+                $clasificacion['unidades'],
+            );
+
+            if ($ids !== []) {
+                UnidadPrincipal::query()
+                    ->whereIn('id', $ids)
+                    ->update(['clasificacion_id' => $creada->getKey()]);
+            }
+        }
     }
 
     public function contarDatosProyecto(string $id): array
