@@ -150,9 +150,11 @@ final class NormalizadorEstructuraProyecto
             $unidades = $item['unidades'] ?? null;
 
             if (! is_array($unidades) || $unidades === []) {
-                throw new InvalidArgumentException(
-                    "El piso {$piso} de '{$nombre}' debe tener al menos una unidad.",
-                );
+                // Un piso con excepción puede quedar vacío: sin unidades ni
+                // instalaciones. Se excluye igual de la generación automática.
+                $resultado[$piso] = [];
+
+                continue;
             }
 
             $normalizadas = [];

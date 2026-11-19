@@ -63,3 +63,14 @@
 - Tests nuevos en `tests/Unit/NormalizadorEstructuraProyectoTest.php` y
   expectativas actualizadas en los tests del borrador.
 - Verificación: **181 tests OK**; `migrate:fresh --seed` ejecutado.
+
+## Corrección: pisos con excepción vacíos
+
+- Un piso con excepción puede quedar vacío: `unidades` ausente o vacío se
+  interpreta como piso sin unidades ni instalaciones. Se elimina el rechazo
+  "El piso X debe tener al menos una unidad"; el piso se excluye igual de la
+  generación automática y salta su numeración.
+- `sin_unidades: true` sigue aceptándose con el mismo efecto (compatibilidad).
+- Tests: caso unitario del normalizador y caso feature del borrador con
+  `unidades: []`; se retira el test que exigía el mínimo.
+- Verificación: **182 tests OK**.

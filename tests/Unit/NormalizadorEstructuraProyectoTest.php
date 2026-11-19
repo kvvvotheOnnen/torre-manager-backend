@@ -68,6 +68,27 @@ class NormalizadorEstructuraProyectoTest extends TestCase
         $this->assertSame(['Ala Norte-101'], $agrupaciones[0]['identificadores']);
     }
 
+    public function test_piso_con_excepcion_sin_unidades_queda_vacio(): void
+    {
+        $agrupaciones = $this->normalizador()->normalizar(TipoCondominio::Edificio, [
+            [
+                'nombre' => 'Edificio',
+                'tipo' => 'edificio',
+                'piso_desde' => 1,
+                'piso_hasta' => 3,
+                'unidades_por_piso' => 2,
+                'pisos_excepcion' => [
+                    ['piso' => 2, 'unidades' => []],
+                ],
+            ],
+        ]);
+
+        $this->assertSame(
+            ['Unidad-101', 'Unidad-102', 'Unidad-301', 'Unidad-302'],
+            $agrupaciones[0]['identificadores'],
+        );
+    }
+
     public function test_unidades_simples_de_excepcion_usan_la_base_del_edificio(): void
     {
         $agrupaciones = $this->normalizador()->normalizar(TipoCondominio::Edificio, [

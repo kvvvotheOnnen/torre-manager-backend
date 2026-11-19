@@ -272,6 +272,36 @@ class SuperadminProyectoBorradorTest extends TestCase
         $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Unidad-202']);
     }
 
+    public function test_piso_excepcion_sin_unidades_declaradas_queda_vacio(): void
+    {
+        $this->autenticarSuperadmin();
+
+        $id = $this->postJson('/api/superadmin/proyectos/borrador', [
+            'nombre' => 'Edificio con piso vacío sin marca',
+        ])->assertCreated()->json('id');
+
+        $this->patchJson("/api/superadmin/proyectos/{$id}/borrador", [
+            'tipo_condominio' => 'edificio',
+            'agrupaciones' => [
+                [
+                    'nombre' => 'Edificio',
+                    'tipo' => 'edificio',
+                    'piso_desde' => 1,
+                    'piso_hasta' => 3,
+                    'unidades_por_piso' => 2,
+                    'pisos_excepcion' => [
+                        ['piso' => 2, 'unidades' => []],
+                    ],
+                ],
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseCount('unidades_principales', 4);
+        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Unidad-101']);
+        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Unidad-301']);
+        $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Unidad-201']);
+    }
+
     public function test_unidades_simples_de_piso_excepcion_respetan_numeracion(): void
     {
         $this->autenticarSuperadmin();
@@ -308,31 +338,6 @@ class SuperadminProyectoBorradorTest extends TestCase
         $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Unidad-202']);
         $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Unidad-203']);
         $this->assertDatabaseCount('instalaciones_extra', 0);
-    }
-
-    public function test_rechaza_piso_excepcion_sin_unidades_si_no_esta_marcado(): void
-    {
-        $this->autenticarSuperadmin();
-
-        $id = $this->postJson('/api/superadmin/proyectos/borrador', [
-            'nombre' => 'Piso sin unidades inválido',
-        ])->assertCreated()->json('id');
-
-        $this->patchJson("/api/superadmin/proyectos/{$id}/borrador", [
-            'tipo_condominio' => 'edificio',
-            'agrupaciones' => [
-                [
-                    'nombre' => 'Edificio',
-                    'tipo' => 'edificio',
-                    'piso_desde' => 1,
-                    'piso_hasta' => 3,
-                    'unidades_por_piso' => 2,
-                    'pisos_excepcion' => [
-                        ['piso' => 2],
-                    ],
-                ],
-            ],
-        ])->assertUnprocessable();
     }
 
     public function test_rechaza_piso_excepcion_fuera_del_rango(): void
