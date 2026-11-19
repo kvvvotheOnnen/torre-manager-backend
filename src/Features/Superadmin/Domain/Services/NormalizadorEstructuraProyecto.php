@@ -42,7 +42,8 @@ final class NormalizadorEstructuraProyecto
 
             $this->validarTipoDeAgrupacion($tipoCondominio, $tipoAgrupacion, $nombre);
 
-            $prefijo = isset($agrupacion['prefijo']) ? (string) $agrupacion['prefijo'] : null;
+            $prefijo = isset($agrupacion['prefijo']) ? trim((string) $agrupacion['prefijo']) : null;
+            $prefijo = $prefijo === '' ? null : $prefijo;
 
             if ($tipoAgrupacion === TipoAgrupacion::Manzana) {
                 $this->validarSinPisosExcepcion($agrupacion, $nombre);
@@ -55,10 +56,15 @@ final class NormalizadorEstructuraProyecto
 
                 $identificadores = $this->generador->generarSecuencial($prefijo ?: 'Casa', $cantidad);
             } else {
-                $pisosExcepcion = $this->normalizarPisosExcepcion($agrupacion, $nombre, $prefijo);
+                // Un edificio es uno solo: sus unidades no se llaman "Edificio-103"
+                // sino "Unidad-103". Torres y bloques conservan su nombre.
+                $base = $prefijo
+                    ?? ($tipoAgrupacion === TipoAgrupacion::Edificio ? 'Unidad' : $nombre);
+
+                $pisosExcepcion = $this->normalizarPisosExcepcion($agrupacion, $nombre, $base);
 
                 $identificadores = $this->generador->generar(
-                    $prefijo ?: $nombre,
+                    $base,
                     (int) ($agrupacion['piso_desde'] ?? 0),
                     (int) ($agrupacion['piso_hasta'] ?? 0),
                     (int) ($agrupacion['unidades_por_piso'] ?? 0),
@@ -106,7 +112,7 @@ final class NormalizadorEstructuraProyecto
      *
      * @throws InvalidArgumentException
      */
-    private function normalizarPisosExcepcion(array $agrupacion, string $nombre, ?string $prefijo = null): array
+    private function normalizarPisosExcepcion(array $agrupacion, string $nombre, string $base): array
     {
         $pisosExcepcion = $agrupacion['pisos_excepcion'] ?? [];
 
@@ -166,7 +172,7 @@ final class NormalizadorEstructuraProyecto
 
                     $normalizadas[] = [
                         'identificador' => $this->generador->generarIdentificador(
-                            $prefijo ?: $nombre,
+                            $base,
                             $piso,
                             $secuenciaSimple,
                         ),

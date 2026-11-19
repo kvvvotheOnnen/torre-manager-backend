@@ -19,9 +19,9 @@ final class SolicitudResidenteSeeder extends Seeder
         $propietario = User::query()->where('email', env('PROPIETARIO_EMAIL', 'propietario@torremanager.test'))->first();
 
         $pendientes = [
-            ['unidad' => 'Edificio-803', 'tipo' => 'propietario', 'principal' => ['Ana Pérez Demo', '15000001-7', 'ana.demo@example.test', '+56960000001'], 'acompanante' => ['Luis Pérez Demo', '15000002-5', 'luis.demo@example.test', '+56960000002']],
-            ['unidad' => 'Edificio-804', 'tipo' => 'arrendatario', 'principal' => ['Carla Rojas Demo', '15000003-3', 'carla.demo@example.test', '+56960000003'], 'acompanante' => null],
-            ['unidad' => 'Edificio-805', 'tipo' => 'propietario', 'principal' => ['Diego Soto Demo', '15000004-1', 'diego.demo@example.test', '+56960000004'], 'acompanante' => null],
+            ['unidad' => 'Unidad-803', 'tipo' => 'propietario', 'principal' => ['Ana Pérez Demo', '15000001-7', 'ana.demo@example.test', '+56960000001'], 'acompanante' => ['Luis Pérez Demo', '15000002-5', 'luis.demo@example.test', '+56960000002']],
+            ['unidad' => 'Unidad-804', 'tipo' => 'arrendatario', 'principal' => ['Carla Rojas Demo', '15000003-3', 'carla.demo@example.test', '+56960000003'], 'acompanante' => null],
+            ['unidad' => 'Unidad-805', 'tipo' => 'propietario', 'principal' => ['Diego Soto Demo', '15000004-1', 'diego.demo@example.test', '+56960000004'], 'acompanante' => null],
         ];
 
         foreach ($pendientes as $indice => $datos) {
@@ -54,7 +54,7 @@ final class SolicitudResidenteSeeder extends Seeder
             }
         }
 
-        $aprobada = $this->unidad($proyecto, 'Edificio-806');
+        $aprobada = $this->unidad($proyecto, 'Unidad-806');
         if ($aprobada !== null && $residente !== null) {
             $solicitud = SolicitudResidente::query()->create([
                 'proyecto_id' => $proyecto->getKey(),
@@ -75,7 +75,7 @@ final class SolicitudResidenteSeeder extends Seeder
             );
         }
 
-        $rechazada = $this->unidad($proyecto, 'Edificio-807');
+        $rechazada = $this->unidad($proyecto, 'Unidad-807');
         if ($rechazada !== null) {
             $solicitud = SolicitudResidente::query()->create([
                 'proyecto_id' => $proyecto->getKey(),

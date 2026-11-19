@@ -50,3 +50,16 @@
 - Consumir la clasificación en el futuro módulo de gastos comunes.
 - Si más adelante se edita estructura fuera del wizard, definir la política de
   remapeo de clasificaciones (hoy el paso las reemplaza).
+
+## Corrección posterior: nomenclatura de unidades del edificio
+
+- Las unidades de una agrupación tipo `edificio` ya no se identifican como
+  `Edificio-103`; usan `Unidad-103`. Torres y bloques conservan su nombre y un
+  prefijo personalizado sigue teniendo prioridad.
+- `NormalizadorEstructuraProyecto` calcula la base de identificación según el
+  tipo y la propaga a las unidades simples de pisos con excepción.
+  `RegistrarAgrupacionEnCascadaUseCase` aplica el mismo default.
+- Seeders/demo actualizados de `Edificio-80X` a `Unidad-80X`.
+- Tests nuevos en `tests/Unit/NormalizadorEstructuraProyectoTest.php` y
+  expectativas actualizadas en los tests del borrador.
+- Verificación: **181 tests OK**; `migrate:fresh --seed` ejecutado.

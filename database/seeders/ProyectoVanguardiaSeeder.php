@@ -27,7 +27,7 @@ final class ProyectoVanguardiaSeeder extends Seeder
         for ($piso = 8; $piso <= 26; $piso++) {
             for ($numero = 1; $numero <= 16; $numero++) {
                 $unidades[] = [
-                    'identificador' => 'Edificio-'.$piso.str_pad((string) $numero, 2, '0', STR_PAD_LEFT),
+                    'identificador' => 'Unidad-'.$piso.str_pad((string) $numero, 2, '0', STR_PAD_LEFT),
                 ];
             }
         }
@@ -64,21 +64,21 @@ final class ProyectoVanguardiaSeeder extends Seeder
                 fn ($query) => $query->where('proyecto_id', $proyecto->getKey()),
             )
             ->whereIn('identificador', [
-                'Edificio-801',
-                'Edificio-802',
-                'Edificio-803',
-                'Edificio-804',
+                'Unidad-801',
+                'Unidad-802',
+                'Unidad-803',
+                'Unidad-804',
             ])
             ->pluck('id', 'identificador');
 
         $asignaciones = [
-            ['identificador' => 'B-001', 'tipo' => 'bodega', 'unidad' => 'Edificio-801'],
-            ['identificador' => 'B-002', 'tipo' => 'bodega', 'unidad' => 'Edificio-802'],
-            ['identificador' => 'B-003', 'tipo' => 'bodega', 'unidad' => 'Edificio-803'],
-            ['identificador' => 'E-001', 'tipo' => 'estacionamiento', 'unidad' => 'Edificio-801'],
-            ['identificador' => 'E-002', 'tipo' => 'estacionamiento', 'unidad' => 'Edificio-802'],
-            ['identificador' => 'E-003', 'tipo' => 'estacionamiento', 'unidad' => 'Edificio-803'],
-            ['identificador' => 'E-004', 'tipo' => 'estacionamiento', 'unidad' => 'Edificio-804'],
+            ['identificador' => 'B-001', 'tipo' => 'bodega', 'unidad' => 'Unidad-801'],
+            ['identificador' => 'B-002', 'tipo' => 'bodega', 'unidad' => 'Unidad-802'],
+            ['identificador' => 'B-003', 'tipo' => 'bodega', 'unidad' => 'Unidad-803'],
+            ['identificador' => 'E-001', 'tipo' => 'estacionamiento', 'unidad' => 'Unidad-801'],
+            ['identificador' => 'E-002', 'tipo' => 'estacionamiento', 'unidad' => 'Unidad-802'],
+            ['identificador' => 'E-003', 'tipo' => 'estacionamiento', 'unidad' => 'Unidad-803'],
+            ['identificador' => 'E-004', 'tipo' => 'estacionamiento', 'unidad' => 'Unidad-804'],
         ];
 
         foreach ($asignaciones as $asignacion) {

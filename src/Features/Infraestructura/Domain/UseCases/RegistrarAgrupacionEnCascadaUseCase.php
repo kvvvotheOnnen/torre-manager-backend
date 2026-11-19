@@ -20,7 +20,6 @@ final class RegistrarAgrupacionEnCascadaUseCase
     /**
      * Registra una agrupación y genera en cascada sus unidades principales.
      *
-     * @return Agrupacion
      *
      * @throws InvalidArgumentException
      * @throws RecursoDuplicadoException
@@ -47,7 +46,14 @@ final class RegistrarAgrupacionEnCascadaUseCase
             throw new InvalidArgumentException('El tipo de agrupación no es válido.');
         }
 
-        $identificaciones = $this->generador->generar($prefijo, $pisoDesde, $pisoHasta, $unidadesPorPiso);
+        $prefijo = $prefijo !== null ? trim($prefijo) : null;
+        $prefijo = $prefijo === '' ? null : $prefijo;
+
+        // Un edificio es uno solo: sus unidades se identifican como "Unidad-103".
+        $base = $prefijo
+            ?? ($tipoAgrupacion === TipoAgrupacion::Edificio ? 'Unidad' : null);
+
+        $identificaciones = $this->generador->generar($base, $pisoDesde, $pisoHasta, $unidadesPorPiso);
 
         $unidades = array_map(
             static fn (string $identificador) => new UnidadPrincipal(id: '', agrupacionId: '', identificador: $identificador),

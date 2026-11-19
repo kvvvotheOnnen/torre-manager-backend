@@ -82,9 +82,9 @@ final class DatabaseSeeder extends Seeder
         ]);
         $this->asegurarMembresia($propietario, $proyecto->getKey(), Rol::Propietario);
 
-        // El residente ocupa la unidad Edificio-801 y el propietario demo es su dueño.
+        // El residente ocupa la unidad Unidad-801 y el propietario demo es su dueño.
         $unidad = UnidadPrincipal::query()
-            ->where('identificador', 'Edificio-801')
+            ->where('identificador', 'Unidad-801')
             ->whereHas('agrupacion', fn ($q) => $q->where('proyecto_id', $proyecto->getKey()))
             ->first();
 
@@ -108,7 +108,7 @@ final class DatabaseSeeder extends Seeder
         }
 
         $unidad802 = UnidadPrincipal::query()
-            ->where('identificador', 'Edificio-802')
+            ->where('identificador', 'Unidad-802')
             ->whereHas('agrupacion', fn ($q) => $q->where('proyecto_id', $proyecto->getKey()))
             ->first();
 

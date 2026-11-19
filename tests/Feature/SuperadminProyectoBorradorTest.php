@@ -224,8 +224,8 @@ class SuperadminProyectoBorradorTest extends TestCase
         ])->assertOk();
 
         $this->assertDatabaseCount('unidades_principales', 5);
-        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Edificio-201']);
-        $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Edificio-202']);
+        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Unidad-201']);
+        $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Unidad-202']);
         $this->assertDatabaseCount('instalaciones_extra', 0);
 
         $this->patchJson("/api/superadmin/proyectos/{$id}/borrador", [
@@ -266,10 +266,10 @@ class SuperadminProyectoBorradorTest extends TestCase
         ])->assertOk();
 
         $this->assertDatabaseCount('unidades_principales', 4);
-        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Edificio-101']);
-        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Edificio-301']);
-        $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Edificio-201']);
-        $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Edificio-202']);
+        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Unidad-101']);
+        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Unidad-301']);
+        $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Unidad-201']);
+        $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Unidad-202']);
     }
 
     public function test_unidades_simples_de_piso_excepcion_respetan_numeracion(): void
@@ -304,9 +304,9 @@ class SuperadminProyectoBorradorTest extends TestCase
         ])->assertOk();
 
         $this->assertDatabaseCount('unidades_principales', 6);
-        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Edificio-201']);
-        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Edificio-202']);
-        $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Edificio-203']);
+        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Unidad-201']);
+        $this->assertDatabaseHas('unidades_principales', ['identificador' => 'Unidad-202']);
+        $this->assertDatabaseMissing('unidades_principales', ['identificador' => 'Unidad-203']);
         $this->assertDatabaseCount('instalaciones_extra', 0);
     }
 

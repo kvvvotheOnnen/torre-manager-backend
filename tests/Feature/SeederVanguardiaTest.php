@@ -36,10 +36,10 @@ class SeederVanguardiaTest extends TestCase
         $this->assertSame(304, $proyecto->unidadesPrincipales()->count());
 
         $this->assertDatabaseHas('unidades_principales', [
-            'identificador' => 'Edificio-801',
+            'identificador' => 'Unidad-801',
         ]);
         $this->assertDatabaseHas('unidades_principales', [
-            'identificador' => 'Edificio-2616',
+            'identificador' => 'Unidad-2616',
         ]);
 
         $this->assertDatabaseHas('instalaciones_extra', [
@@ -77,14 +77,14 @@ class SeederVanguardiaTest extends TestCase
                 'agrupacion',
                 fn ($query) => $query->where('proyecto_id', $proyecto->getKey()),
             )
-            ->where('identificador', 'Edificio-801')
+            ->where('identificador', 'Unidad-801')
             ->value('id');
         $unidad804 = UnidadPrincipal::query()
             ->whereHas(
                 'agrupacion',
                 fn ($query) => $query->where('proyecto_id', $proyecto->getKey()),
             )
-            ->where('identificador', 'Edificio-804')
+            ->where('identificador', 'Unidad-804')
             ->value('id');
 
         $this->assertDatabaseHas('unidades_accesorias', [
@@ -168,7 +168,7 @@ class SeederVanguardiaTest extends TestCase
             ->firstOrFail();
         $unidad802 = UnidadPrincipal::query()
             ->whereHas('agrupacion', fn ($query) => $query->where('proyecto_id', $proyecto->getKey()))
-            ->where('identificador', 'Edificio-802')
+            ->where('identificador', 'Unidad-802')
             ->value('id');
 
         $this->assertSame(3, UnidadUsuario::query()->count());
