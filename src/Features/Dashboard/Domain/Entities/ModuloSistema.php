@@ -1,6 +1,6 @@
 <?php
 
-namespace Features\Superadmin\Domain\Entities;
+namespace Features\Dashboard\Domain\Entities;
 
 enum ModuloSistema: string
 {

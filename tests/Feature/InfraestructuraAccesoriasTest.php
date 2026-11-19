@@ -60,6 +60,7 @@ class InfraestructuraAccesoriasTest extends TestCase
                 'asignacion' => 'departamento',
                 'unidad_principal_id' => $unidad->getKey(),
             ],
+            ['X-Proyecto-Id' => (string) $proyecto->getKey()],
         );
 
         $response->assertOk()
@@ -90,6 +91,7 @@ class InfraestructuraAccesoriasTest extends TestCase
         $response = $this->patchJson(
             "/api/infraestructura/unidades-accesorias/{$accesoria->getKey()}/asignacion",
             ['asignacion' => 'visita'],
+            ['X-Proyecto-Id' => (string) $proyecto->getKey()],
         );
 
         $response->assertOk()
@@ -109,6 +111,7 @@ class InfraestructuraAccesoriasTest extends TestCase
         $response = $this->patchJson(
             "/api/infraestructura/unidades-accesorias/{$accesoria->getKey()}/asignacion",
             ['asignacion' => 'otro'],
+            ['X-Proyecto-Id' => (string) $proyecto->getKey()],
         );
 
         $response->assertOk()

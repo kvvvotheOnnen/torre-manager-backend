@@ -54,4 +54,9 @@ final class AlmacenS3Compatible implements AlmacenArchivos
     {
         return $this->almacen->existe($ruta);
     }
+
+    public function rutaFisica(string $ruta): ?string
+    {
+        return null;
+    }
 }

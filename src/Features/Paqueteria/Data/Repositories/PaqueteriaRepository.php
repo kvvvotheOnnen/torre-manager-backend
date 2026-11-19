@@ -7,6 +7,7 @@ use App\Models\UnidadUsuario;
 use App\Models\User;
 use Features\Archivos\Domain\Contracts\AlmacenArchivos;
 use Features\Auth\Domain\Entities\Rol;
+use Features\Paqueteria\Data\Models\PaqueteDto;
 use Features\Paqueteria\Domain\Entities\Paquete as PaqueteEntity;
 use Features\Paqueteria\Domain\Exceptions\PaqueteNoEncontradoException;
 use Features\Paqueteria\Domain\Exceptions\PaqueteYaRetiradoException;
@@ -32,7 +33,16 @@ final class PaqueteriaRepository implements PaqueteriaRepositoryInterface
 
         $paquete->load('unidadPrincipal');
 
-        return $paquete->toEntity();
+        return PaqueteDto::fromModel($paquete)->toEntity();
+    }
+
+    public function obtenerPorId(string $paqueteId): ?PaqueteEntity
+    {
+        $paquete = Paquete::query()
+            ->with('unidadPrincipal')
+            ->find($paqueteId);
+
+        return $paquete !== null ? PaqueteDto::fromModel($paquete)->toEntity() : null;
     }
 
     public function listar(string $usuarioId, string $rol, ?string $proyectoId = null): array
@@ -43,13 +53,19 @@ final class PaqueteriaRepository implements PaqueteriaRepositoryInterface
                 ->pluck('unidad_principal_id')
                 ->all();
 
-            $paquetes = Paquete::query()
+            $query = Paquete::query()
                 ->where(function ($query) use ($usuarioId, $unidades): void {
                     $query->where('residente_id', $usuarioId);
                     if ($unidades !== []) {
                         $query->orWhereIn('unidad_principal_id', $unidades);
                     }
-                })
+                });
+
+            if ($proyectoId !== null && $proyectoId !== '') {
+                $query->where('proyecto_id', $proyectoId);
+            }
+
+            $paquetes = $query
                 ->with(['unidadPrincipal', 'registradoPor'])
                 ->orderByDesc('fecha_recepcion')
                 ->get();
@@ -76,7 +92,7 @@ final class PaqueteriaRepository implements PaqueteriaRepositoryInterface
             $paquetes = $query->get();
         }
 
-        return $paquetes->map(fn (Paquete $p) => $p->toEntity())->all();
+        return $paquetes->map(fn (Paquete $p) => PaqueteDto::fromModel($p)->toEntity())->all();
     }
 
     public function marcarRetirado(string $paqueteId, string $retiradoPorNombre): PaqueteEntity
@@ -95,7 +111,7 @@ final class PaqueteriaRepository implements PaqueteriaRepositoryInterface
 
         $paquete->load('unidadPrincipal');
 
-        return $paquete->fresh()->toEntity();
+        return PaqueteDto::fromModel($paquete->fresh())->toEntity();
     }
 
     public function actualizar(string $paqueteId, array $datos): PaqueteEntity
@@ -138,6 +154,6 @@ final class PaqueteriaRepository implements PaqueteriaRepositoryInterface
 
         $paquete->load('unidadPrincipal');
 
-        return $paquete->fresh()->toEntity();
+        return PaqueteDto::fromModel($paquete->fresh())->toEntity();
     }
 }

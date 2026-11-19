@@ -69,6 +69,19 @@ final class AlmacenEnDisco implements AlmacenArchivos
         return Storage::disk($this->disco)->exists($ruta);
     }
 
+    public function rutaFisica(string $ruta): ?string
+    {
+        if (! $this->existe($ruta)) {
+            return null;
+        }
+
+        try {
+            return Storage::disk($this->disco)->path($ruta);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     private function construirRuta(string $carpeta, string $nombreOriginal): string
     {
         $carpeta = trim($carpeta, '/');

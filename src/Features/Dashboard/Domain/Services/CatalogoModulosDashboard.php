@@ -4,9 +4,9 @@ namespace Features\Dashboard\Domain\Services;
 
 use Features\Dashboard\Domain\Entities\ModuloDashboard;
 use Features\Dashboard\Domain\Entities\ModuloGeneral;
+use Features\Dashboard\Domain\Entities\ModuloSistema;
 use Features\Dashboard\Domain\Entities\ProyectoConModulos;
 use Features\Dashboard\Domain\Entities\TipoModuloDashboard;
-use Features\Superadmin\Domain\Entities\ModuloSistema;
 
 final class CatalogoModulosDashboard
 {

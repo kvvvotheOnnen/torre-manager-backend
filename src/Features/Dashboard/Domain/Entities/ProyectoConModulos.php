@@ -2,8 +2,6 @@
 
 namespace Features\Dashboard\Domain\Entities;
 
-use Features\Superadmin\Domain\Entities\ModuloSistema;
-
 final class ProyectoConModulos
 {
     /**

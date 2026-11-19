@@ -4,11 +4,11 @@ namespace Features\Dashboard\Domain\UseCases;
 
 use Features\Dashboard\Domain\Contracts\AutorizadorCapacidades;
 use Features\Dashboard\Domain\Entities\Funcion;
-use Features\Dashboard\Domain\Entities\ModuloGeneral;
 use Features\Dashboard\Domain\Entities\FuncionVisible;
+use Features\Dashboard\Domain\Entities\ModuloGeneral;
+use Features\Dashboard\Domain\Entities\ModuloSistema;
 use Features\Dashboard\Domain\Repositories\CatalogoFuncionesRepositoryInterface;
 use Features\Dashboard\Domain\Repositories\DashboardRepositoryInterface;
-use Features\Superadmin\Domain\Entities\ModuloSistema;
 
 /**
  * Devuelve las funciones que el usuario puede ver en el proyecto activo.

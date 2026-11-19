@@ -5,6 +5,7 @@ namespace Features\Acceso\Data\Repositories;
 use App\Models\UnidadPrincipal;
 use App\Models\UnidadUsuario;
 use Features\Acceso\Domain\Entities\TipoVinculo;
+use Features\Acceso\Domain\Entities\UnidadContexto;
 use Features\Acceso\Domain\Entities\VinculoUnidad;
 use Features\Acceso\Domain\Exceptions\VinculoNoEncontradoException;
 use Features\Acceso\Domain\Repositories\VinculoUnidadRepositoryInterface;
@@ -140,6 +141,81 @@ final class VinculoUnidadRepository implements VinculoUnidadRepositoryInterface
             ->first();
 
         return $vinculo !== null ? $this->toEntity($vinculo) : null;
+    }
+
+    public function esPropietarioActual(string $unidadPrincipalId, string $usuarioId): bool
+    {
+        return UnidadUsuario::query()
+            ->where('unidad_principal_id', $unidadPrincipalId)
+            ->where('usuario_id', $usuarioId)
+            ->where('tipo_vinculo', TipoVinculo::Propietario->value)
+            ->where('es_actual', true)
+            ->exists();
+    }
+
+    public function esOcupanteActual(string $unidadPrincipalId, string $usuarioId): bool
+    {
+        return UnidadUsuario::query()
+            ->where('unidad_principal_id', $unidadPrincipalId)
+            ->where('usuario_id', $usuarioId)
+            ->whereIn('tipo_vinculo', [
+                TipoVinculo::Arrendatario->value,
+                TipoVinculo::Residente->value,
+                TipoVinculo::Familiar->value,
+            ])
+            ->where('es_actual', true)
+            ->exists();
+    }
+
+    public function contextoUnidad(string $unidadPrincipalId): ?UnidadContexto
+    {
+        $unidad = UnidadPrincipal::query()
+            ->with(['agrupacion', 'vinculos.usuario'])
+            ->find($unidadPrincipalId);
+
+        return $unidad === null ? null : $this->aContexto($unidad);
+    }
+
+    public function contextosDeUnidades(?array $proyectoIds = null): array
+    {
+        $query = UnidadPrincipal::query()
+            ->with(['agrupacion', 'vinculos.usuario'])
+            ->orderBy('identificador');
+
+        if ($proyectoIds !== null) {
+            if ($proyectoIds === []) {
+                return [];
+            }
+
+            $query->whereHas('agrupacion', fn ($q) => $q->whereIn('proyecto_id', $proyectoIds));
+        }
+
+        return $query->get()->map(fn (UnidadPrincipal $unidad) => $this->aContexto($unidad))->all();
+    }
+
+    private function aContexto(UnidadPrincipal $unidad): UnidadContexto
+    {
+        $propietario = $unidad->vinculos
+            ->first(fn (UnidadUsuario $v) => $v->tipo_vinculo === TipoVinculo::Propietario->value && $v->es_actual);
+        $ocupante = $unidad->vinculos
+            ->where('es_actual', true)
+            ->whereIn('tipo_vinculo', [TipoVinculo::Arrendatario->value, TipoVinculo::Residente->value])
+            ->sortBy(fn (UnidadUsuario $v) => $v->tipo_vinculo === TipoVinculo::Arrendatario->value ? 0 : 1)
+            ->first();
+
+        return new UnidadContexto(
+            unidadPrincipalId: (string) $unidad->getKey(),
+            proyectoId: $unidad->agrupacion?->proyecto_id !== null
+                ? (string) $unidad->agrupacion->proyecto_id
+                : '',
+            identificador: (string) $unidad->identificador,
+            agrupacionNombre: $unidad->agrupacion?->nombre,
+            propietarioId: $propietario?->usuario_id !== null ? (string) $propietario->usuario_id : null,
+            propietarioNombre: $propietario?->usuario?->nombre,
+            ocupanteId: $ocupante?->usuario_id !== null ? (string) $ocupante->usuario_id : null,
+            ocupanteNombre: $ocupante?->usuario?->nombre,
+            ocupanteTipo: $ocupante?->tipo_vinculo,
+        );
     }
 
     private function toEntity(UnidadUsuario $vinculo): VinculoUnidad

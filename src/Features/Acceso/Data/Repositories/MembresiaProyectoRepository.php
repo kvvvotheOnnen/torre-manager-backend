@@ -3,6 +3,8 @@
 namespace Features\Acceso\Data\Repositories;
 
 use App\Models\ProyectoUsuario;
+use App\Models\UnidadUsuario;
+use App\Models\User;
 use Features\Acceso\Domain\Entities\MembresiaProyecto;
 use Features\Acceso\Domain\Repositories\MembresiaProyectoRepositoryInterface;
 use Features\Auth\Domain\Entities\Rol;
@@ -65,6 +67,46 @@ final class MembresiaProyectoRepository implements MembresiaProyectoRepositoryIn
         }
 
         return $this->toEntity($membresia->refresh());
+    }
+
+    public function rolGlobalDeUsuario(string $usuarioId): ?Rol
+    {
+        $rol = User::query()->whereKey($usuarioId)->value('rol');
+
+        return $rol !== null ? Rol::tryFrom((string) $rol) : null;
+    }
+
+    public function proyectoLegacyDeUsuario(string $usuarioId): ?string
+    {
+        $proyectoId = User::query()->whereKey($usuarioId)->value('proyecto_id');
+
+        return $proyectoId !== null ? (string) $proyectoId : null;
+    }
+
+    public function proyectosPorUnidades(string $usuarioId): array
+    {
+        return UnidadUsuario::query()
+            ->where('usuario_id', $usuarioId)
+            ->where('es_actual', true)
+            ->whereHas('unidadPrincipal.agrupacion')
+            ->with('unidadPrincipal.agrupacion:id,proyecto_id')
+            ->get()
+            ->map(fn (UnidadUsuario $v) => (int) $v->unidadPrincipal?->agrupacion?->proyecto_id)
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    public function tieneUnidadActualEnProyecto(string $usuarioId, string $proyectoId): bool
+    {
+        return UnidadUsuario::query()
+            ->where('usuario_id', $usuarioId)
+            ->where('es_actual', true)
+            ->whereHas(
+                'unidadPrincipal.agrupacion',
+                fn ($q) => $q->where('proyecto_id', $proyectoId),
+            )
+            ->exists();
     }
 
     private function toEntity(ProyectoUsuario $membresia): MembresiaProyecto

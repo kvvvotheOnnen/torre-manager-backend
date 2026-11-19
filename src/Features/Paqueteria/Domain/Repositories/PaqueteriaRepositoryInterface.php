@@ -11,6 +11,8 @@ interface PaqueteriaRepositoryInterface
      */
     public function registrar(array $datos): Paquete;
 
+    public function obtenerPorId(string $paqueteId): ?Paquete;
+
     /**
      * @return Paquete[]
      */

@@ -2,7 +2,7 @@
 
 namespace Features\Superadmin\Domain\UseCases;
 
-use Features\Superadmin\Domain\Entities\ModuloSistema;
+use Features\Dashboard\Domain\Entities\ModuloSistema;
 use Features\Superadmin\Domain\Entities\ProyectoDetalle;
 use Features\Superadmin\Domain\Entities\TipoCondominio;
 use Features\Superadmin\Domain\Exceptions\RecursoNoEncontradoException;

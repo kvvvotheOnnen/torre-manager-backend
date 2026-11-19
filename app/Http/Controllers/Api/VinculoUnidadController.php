@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\UnidadPrincipal;
-use App\Models\User;
 use Features\Acceso\Domain\Entities\TipoVinculo;
 use Features\Acceso\Domain\Entities\VinculoUnidad;
 use Features\Acceso\Domain\Exceptions\UnidadNoDisponibleException;
@@ -15,6 +13,7 @@ use Features\Acceso\Domain\UseCases\AsignarVinculoUnidadUseCase;
 use Features\Acceso\Domain\UseCases\CerrarVinculoUnidadUseCase;
 use Features\Acceso\Domain\UseCases\ListarVinculosUnidadUseCase;
 use Features\Acceso\Domain\UseCases\ListarVinculosUsuarioUseCase;
+use Features\Acceso\Domain\UseCases\ObtenerContextoUnidadUseCase;
 use Features\Auth\Domain\Entities\Rol;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,6 +27,7 @@ final class VinculoUnidadController extends Controller
         private readonly ListarVinculosUsuarioUseCase $listarUsuarioUseCase,
         private readonly VinculoUnidadRepositoryInterface $vinculos,
         private readonly AccesoProyectoService $acceso,
+        private readonly ObtenerContextoUnidadUseCase $obtenerContexto,
     ) {}
 
     public function misVinculos(Request $request): JsonResponse
@@ -67,13 +67,13 @@ final class VinculoUnidadController extends Controller
 
     public function index(Request $request, string $unidadId): JsonResponse
     {
-        $unidad = UnidadPrincipal::query()->with('agrupacion')->find($unidadId);
+        $contexto = $this->obtenerContexto->execute($unidadId);
 
-        if ($unidad === null || ! $this->puedeAdministrar($request, (int) $unidad->agrupacion->proyecto_id)) {
+        if ($contexto === null || ! $this->puedeAdministrar($request, $contexto->proyectoId())) {
             return response()->json(['message' => 'Unidad no encontrada.'], 404);
         }
 
-        $vinculos = $this->listarUnidadUseCase->execute((string) $unidad->getKey());
+        $vinculos = $this->listarUnidadUseCase->execute($contexto->unidadPrincipalId());
 
         return response()->json([
             'vinculos' => array_map(fn (VinculoUnidad $v) => $this->serializar($v), $vinculos),
@@ -89,23 +89,23 @@ final class VinculoUnidadController extends Controller
             'fecha_fin' => ['nullable', 'date', 'after_or_equal:fecha_inicio'],
         ]);
 
-        $unidad = UnidadPrincipal::query()->with('agrupacion')->find($unidadId);
+        $contexto = $this->obtenerContexto->execute($unidadId);
 
-        if ($unidad === null || ! $this->puedeAdministrar($request, (int) $unidad->agrupacion->proyecto_id)) {
+        if ($contexto === null || ! $this->puedeAdministrar($request, $contexto->proyectoId())) {
             return response()->json(['message' => 'Unidad no encontrada.'], 404);
         }
 
-        $usuario = User::query()->find($validated['usuario_id']);
+        $usuarioId = (string) $validated['usuario_id'];
 
-        if ($usuario === null || $usuario->rol === Rol::Superadmin->value) {
+        if ($this->acceso->esSuperadmin($usuarioId)) {
             return response()->json(['message' => 'El usuario indicado no puede vincularse a una unidad.'], 422);
         }
 
         try {
             $vinculo = $this->asignarUseCase->execute(
-                (string) $unidad->getKey(),
-                (string) $usuario->getKey(),
-                (string) $unidad->agrupacion->proyecto_id,
+                $contexto->unidadPrincipalId(),
+                $usuarioId,
+                $contexto->proyectoId(),
                 TipoVinculo::from($validated['tipo_vinculo']),
                 $validated['fecha_inicio'],
                 $validated['fecha_fin'] ?? null,
@@ -121,7 +121,7 @@ final class VinculoUnidadController extends Controller
     {
         $vinculo = $this->vinculos->obtener($vinculoId);
 
-        if ($vinculo === null || ! $this->puedeAdministrar($request, (int) $vinculo->proyectoId())) {
+        if ($vinculo === null || ! $this->puedeAdministrar($request, (string) $vinculo->proyectoId())) {
             return response()->json(['message' => 'Vínculo no encontrado.'], 404);
         }
 
@@ -138,9 +138,9 @@ final class VinculoUnidadController extends Controller
         return response()->json($this->serializar($cerrado));
     }
 
-    private function puedeAdministrar(Request $request, int $proyectoId): bool
+    private function puedeAdministrar(Request $request, string $proyectoId): bool
     {
-        $rol = $this->acceso->rolEn((string) $request->user()->getAuthIdentifier(), (string) $proyectoId);
+        $rol = $this->acceso->rolEn((string) $request->user()->getAuthIdentifier(), $proyectoId);
 
         return $rol === Rol::Superadmin || $rol === Rol::Administrador;
     }

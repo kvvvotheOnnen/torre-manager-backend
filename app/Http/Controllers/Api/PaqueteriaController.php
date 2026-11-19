@@ -3,16 +3,22 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Paquete as PaqueteModel;
-use App\Models\UnidadPrincipal;
-use App\Models\User;
+use Features\Acceso\Domain\Entities\UnidadContexto;
+use Features\Acceso\Domain\Services\AccesoProyectoService;
+use Features\Acceso\Domain\UseCases\ListarContextosUnidadesUseCase;
 use Features\Archivos\Domain\Contracts\AlmacenArchivos;
+use Features\Paqueteria\Domain\Entities\Paquete;
 use Features\Paqueteria\Domain\Exceptions\PaqueteNoEncontradoException;
 use Features\Paqueteria\Domain\Exceptions\PaqueteYaRetiradoException;
+use Features\Paqueteria\Domain\Exceptions\ResidenteNoCorrespondeException;
+use Features\Paqueteria\Domain\Exceptions\UnidadNoEncontradaException;
+use Features\Paqueteria\Domain\Exceptions\UnidadNoPerteneceAlProyectoException;
 use Features\Paqueteria\Domain\UseCases\ActualizarPaqueteUseCase;
 use Features\Paqueteria\Domain\UseCases\ListarPaquetesUseCase;
 use Features\Paqueteria\Domain\UseCases\MarcarPaqueteRetiradoUseCase;
+use Features\Paqueteria\Domain\UseCases\ObtenerPaqueteUseCase;
 use Features\Paqueteria\Domain\UseCases\RegistrarPaqueteUseCase;
+use Features\Paqueteria\Domain\UseCases\ResolverDestinoPaqueteUseCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
@@ -24,6 +30,10 @@ final class PaqueteriaController extends Controller
         private readonly ListarPaquetesUseCase $listarUseCase,
         private readonly MarcarPaqueteRetiradoUseCase $marcarRetiradoUseCase,
         private readonly ActualizarPaqueteUseCase $actualizarUseCase,
+        private readonly ObtenerPaqueteUseCase $obtenerUseCase,
+        private readonly ResolverDestinoPaqueteUseCase $resolverDestinoUseCase,
+        private readonly ListarContextosUnidadesUseCase $listarUnidadesUseCase,
+        private readonly AccesoProyectoService $acceso,
         private readonly AlmacenArchivos $almacen,
     ) {}
 
@@ -38,23 +48,19 @@ final class PaqueteriaController extends Controller
             'foto' => ['nullable', 'image', 'max:5120'],
         ]);
 
-        $unidad = UnidadPrincipal::query()
-            ->with('agrupacion')
-            ->findOrFail($validated['unidad_principal_id']);
-        $proyectoId = (int) $unidad->agrupacion->proyecto_id;
-        $ocupante = $unidad->ocupanteActual();
-        $residenteId = $ocupante?->usuario_id ?? $unidad->residente_id;
-        $usuario = $request->user();
+        $usuarioId = (string) $request->user()->getAuthIdentifier();
 
-        if (! $this->puedeAccederAProyecto($usuario, $proyectoId)) {
-            return response()->json(['message' => 'Proyecto no encontrado.'], 404);
-        }
-        if ((int) $validated['proyecto_id'] !== $proyectoId) {
-            return response()->json(['message' => 'La unidad no pertenece al proyecto indicado.'], 422);
-        }
-        if (isset($validated['residente_id'])
-            && (int) $validated['residente_id'] !== (int) $residenteId) {
-            return response()->json(['message' => 'El residente no corresponde a la unidad indicada.'], 422);
+        try {
+            $destino = $this->resolverDestinoUseCase->execute(
+                $usuarioId,
+                (string) $validated['unidad_principal_id'],
+                (string) $validated['proyecto_id'],
+                isset($validated['residente_id']) ? (string) $validated['residente_id'] : null,
+            );
+        } catch (UnidadNoEncontradaException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 404);
+        } catch (UnidadNoPerteneceAlProyectoException|ResidenteNoCorrespondeException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
         }
 
         $foto = $request->hasFile('foto') ? $request->file('foto') : null;
@@ -64,13 +70,13 @@ final class PaqueteriaController extends Controller
 
         try {
             $paquete = $this->registrarUseCase->execute([
-                'proyecto_id' => $proyectoId,
-                'unidad_principal_id' => $unidad->getKey(),
-                'residente_id' => $residenteId,
+                'proyecto_id' => $destino->proyectoId(),
+                'unidad_principal_id' => $destino->unidadPrincipalId(),
+                'residente_id' => $destino->residenteId(),
                 'descripcion' => $validated['descripcion'],
                 'remitente' => $validated['remitente'],
                 'foto_path' => $fotoPath,
-                'registrado_por' => $usuario->getAuthIdentifier(),
+                'registrado_por' => $usuarioId,
             ]);
         } catch (Throwable $exception) {
             if ($fotoPath !== null) {
@@ -80,101 +86,49 @@ final class PaqueteriaController extends Controller
             throw $exception;
         }
 
-        return response()->json([
-            'id' => $paquete->id(),
-            'proyecto_id' => $paquete->proyectoId(),
-            'unidad_principal_id' => $paquete->unidadPrincipalId(),
-            'unidad' => $paquete->unidadIdentificador(),
-            'residente_id' => $paquete->residenteId(),
-            'descripcion' => $paquete->descripcion(),
-            'remitente' => $paquete->remitente(),
-            'foto_url' => $paquete->fotoPath() !== null
-                ? $this->almacen->url($paquete->fotoPath())
-                : null,
-            'fecha_recepcion' => $paquete->fechaRecepcion(),
-            'estado' => $paquete->estado(),
-            'retirado_por_nombre' => $paquete->retiradoPorNombre(),
-        ], 201);
+        return response()->json($this->serializar($paquete), 201);
     }
 
     public function index(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'proyecto_id' => ['sometimes', 'integer', 'exists:proyectos,id'],
-        ]);
         $usuario = $request->user();
-        $proyectoId = $validated['proyecto_id'] ?? null;
-
-        if ($proyectoId !== null && ! $this->puedeAccederAProyecto($usuario, (int) $proyectoId)) {
-            return response()->json(['message' => 'Proyecto no encontrado.'], 404);
-        }
+        $proyectoId = $this->proyectoIdSolicitado($request);
 
         $paquetes = $this->listarUseCase->execute(
             (string) $usuario->getAuthIdentifier(),
             $usuario->rol,
-            $proyectoId === null ? null : (string) $proyectoId,
+            $proyectoId,
         );
 
         return response()->json([
-            'paquetes' => array_map(
-                static fn ($p) => [
-                    'id' => $p->id(),
-                    'proyecto_id' => $p->proyectoId(),
-                    'unidad_principal_id' => $p->unidadPrincipalId(),
-                    'unidad' => $p->unidadIdentificador(),
-                    'residente_id' => $p->residenteId(),
-                    'descripcion' => $p->descripcion(),
-                    'remitente' => $p->remitente(),
-                    'foto_url' => $p->fotoPath() !== null
-                        ? $this->almacen->url($p->fotoPath())
-                        : null,
-                    'fecha_recepcion' => $p->fechaRecepcion(),
-                    'estado' => $p->estado(),
-                    'fecha_retiro' => $p->fechaRetiro(),
-                    'retirado_por_nombre' => $p->retiradoPorNombre(),
-                ],
-                $paquetes,
-            ),
+            'paquetes' => array_map(fn (Paquete $p) => $this->serializar($p), $paquetes),
         ]);
     }
 
     public function unidades(Request $request): JsonResponse
     {
-        $usuario = $request->user();
-        $proyectoIds = $this->proyectosAccesibles($usuario);
+        $usuarioId = (string) $request->user()->getAuthIdentifier();
+        $proyectoIds = $this->acceso->esSuperadmin($usuarioId)
+            ? null
+            : $this->acceso->proyectosIdsDe($usuarioId);
 
-        $query = UnidadPrincipal::query()
-            ->with('agrupacion')
-            ->orderBy('identificador');
-
-        if ($usuario->rol !== 'superadmin') {
-            $query->whereHas('agrupacion', fn ($q) => $q->whereIn('proyecto_id', $proyectoIds));
-        }
-
-        $unidades = $query->with('vinculos.usuario')->get(['id', 'agrupacion_id', 'identificador', 'residente_id']);
+        $unidades = $this->listarUnidadesUseCase->execute($proyectoIds);
 
         return response()->json([
-            'unidades' => $unidades->map(function ($u) {
-                $propietario = $u->vinculos
-                    ->first(fn ($v) => $v->tipo_vinculo === 'propietario' && $v->es_actual);
-                $ocupante = $u->vinculos
-                    ->where('es_actual', true)
-                    ->whereIn('tipo_vinculo', ['arrendatario', 'residente'])
-                    ->sortBy(fn ($v) => $v->tipo_vinculo === 'arrendatario' ? 0 : 1)
-                    ->first();
-
-                return [
-                    'id' => $u->getKey(),
-                    'identificador' => $u->identificador,
-                    'agrupacion' => $u->agrupacion?->nombre,
-                    'proyecto_id' => $u->agrupacion?->proyecto_id,
-                    'residente_id' => $ocupante?->usuario_id ?? $u->residente_id,
-                    'propietario_id' => $propietario?->usuario_id,
-                    'propietario_nombre' => $propietario?->usuario?->nombre,
-                    'ocupante_id' => $ocupante?->usuario_id,
-                    'ocupante_nombre' => $ocupante?->usuario?->nombre,
-                ];
-            })->values(),
+            'unidades' => array_map(
+                static fn (UnidadContexto $u) => [
+                    'id' => (int) $u->unidadPrincipalId(),
+                    'identificador' => $u->identificador(),
+                    'agrupacion' => $u->agrupacionNombre(),
+                    'proyecto_id' => (int) $u->proyectoId(),
+                    'residente_id' => $u->ocupanteId() !== null ? (int) $u->ocupanteId() : null,
+                    'propietario_id' => $u->propietarioId() !== null ? (int) $u->propietarioId() : null,
+                    'propietario_nombre' => $u->propietarioNombre(),
+                    'ocupante_id' => $u->ocupanteId() !== null ? (int) $u->ocupanteId() : null,
+                    'ocupante_nombre' => $u->ocupanteNombre(),
+                ],
+                $unidades,
+            ),
         ]);
     }
 
@@ -188,23 +142,25 @@ final class PaqueteriaController extends Controller
             'foto' => ['nullable', 'image', 'max:5120'],
         ]);
 
-        $usuario = $request->user();
-        $paqueteActual = $this->paqueteAccesible($usuario, $id);
+        $usuarioId = (string) $request->user()->getAuthIdentifier();
+        $paqueteActual = $this->obtenerUseCase->execute($usuarioId, $id);
         if ($paqueteActual === null) {
             return response()->json(['message' => 'Paquete no encontrado.'], 404);
         }
 
-        $unidad = UnidadPrincipal::query()
-            ->with('agrupacion')
-            ->findOrFail($validated['unidad_principal_id']);
-        if ((int) $unidad->agrupacion->proyecto_id !== (int) $paqueteActual->proyecto_id) {
+        try {
+            $destino = $this->resolverDestinoUseCase->execute(
+                $usuarioId,
+                (string) $validated['unidad_principal_id'],
+                $paqueteActual->proyectoId(),
+                isset($validated['residente_id']) ? (string) $validated['residente_id'] : null,
+            );
+        } catch (UnidadNoEncontradaException) {
+            return response()->json(['message' => 'Unidad no encontrada.'], 404);
+        } catch (UnidadNoPerteneceAlProyectoException) {
             return response()->json(['message' => 'La unidad debe pertenecer al proyecto del paquete.'], 422);
-        }
-        $ocupante = $unidad->ocupanteActual();
-        $residenteId = $ocupante?->usuario_id ?? $unidad->residente_id;
-        if (isset($validated['residente_id'])
-            && (int) $validated['residente_id'] !== (int) $residenteId) {
-            return response()->json(['message' => 'El residente no corresponde a la unidad indicada.'], 422);
+        } catch (ResidenteNoCorrespondeException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
         }
 
         $datos = [];
@@ -214,8 +170,8 @@ final class PaqueteriaController extends Controller
         if (array_key_exists('remitente', $validated)) {
             $datos['remitente'] = $validated['remitente'];
         }
-        $datos['residente_id'] = $residenteId;
-        $datos['unidad_principal_id'] = $unidad->getKey();
+        $datos['residente_id'] = $destino->residenteId();
+        $datos['unidad_principal_id'] = $destino->unidadPrincipalId();
 
         $foto = $request->hasFile('foto') ? $request->file('foto') : null;
         $fotoPath = $foto !== null
@@ -246,22 +202,7 @@ final class PaqueteriaController extends Controller
             throw $exception;
         }
 
-        return response()->json([
-            'id' => $paquete->id(),
-            'proyecto_id' => $paquete->proyectoId(),
-            'unidad_principal_id' => $paquete->unidadPrincipalId(),
-            'unidad' => $paquete->unidadIdentificador(),
-            'residente_id' => $paquete->residenteId(),
-            'descripcion' => $paquete->descripcion(),
-            'remitente' => $paquete->remitente(),
-            'foto_url' => $paquete->fotoPath() !== null
-                ? $this->almacen->url($paquete->fotoPath())
-                : null,
-            'fecha_recepcion' => $paquete->fechaRecepcion(),
-            'estado' => $paquete->estado(),
-            'fecha_retiro' => $paquete->fechaRetiro(),
-            'retirado_por_nombre' => $paquete->retiradoPorNombre(),
-        ]);
+        return response()->json($this->serializar($paquete));
     }
 
     public function retirar(Request $request, string $id): JsonResponse
@@ -270,7 +211,9 @@ final class PaqueteriaController extends Controller
             'retirado_por_nombre' => ['required', 'string', 'max:255'],
         ]);
 
-        if ($this->paqueteAccesible($request->user(), $id) === null) {
+        $usuarioId = (string) $request->user()->getAuthIdentifier();
+
+        if ($this->obtenerUseCase->execute($usuarioId, $id) === null) {
             return response()->json(['message' => 'Paquete no encontrado.'], 404);
         }
 
@@ -283,7 +226,20 @@ final class PaqueteriaController extends Controller
             return response()->json(['message' => 'Paquete no encontrado.'], 404);
         }
 
-        return response()->json([
+        return response()->json($this->serializar($paquete));
+    }
+
+    private function proyectoIdSolicitado(Request $request): ?string
+    {
+        $proyectoId = $request->header('X-Proyecto-Id') ?? $request->input('proyecto_id');
+
+        return $proyectoId === null || $proyectoId === '' ? null : (string) $proyectoId;
+    }
+
+    /** @return array<string, mixed> */
+    private function serializar(Paquete $paquete): array
+    {
+        return [
             'id' => $paquete->id(),
             'proyecto_id' => $paquete->proyectoId(),
             'unidad_principal_id' => $paquete->unidadPrincipalId(),
@@ -298,33 +254,6 @@ final class PaqueteriaController extends Controller
             'estado' => $paquete->estado(),
             'fecha_retiro' => $paquete->fechaRetiro(),
             'retirado_por_nombre' => $paquete->retiradoPorNombre(),
-        ]);
-    }
-
-    /** @return int[] */
-    private function proyectosAccesibles(User $usuario): array
-    {
-        $ids = $usuario->proyectos()->pluck('proyectos.id')->map(fn ($id) => (int) $id)->all();
-        if ($usuario->proyecto_id !== null) {
-            $ids[] = (int) $usuario->proyecto_id;
-        }
-
-        return array_values(array_unique($ids));
-    }
-
-    private function puedeAccederAProyecto(User $usuario, int $proyectoId): bool
-    {
-        return $usuario->rol === 'superadmin'
-            || in_array($proyectoId, $this->proyectosAccesibles($usuario), true);
-    }
-
-    private function paqueteAccesible(User $usuario, string $id): ?PaqueteModel
-    {
-        $query = PaqueteModel::query()->whereKey($id);
-        if ($usuario->rol !== 'superadmin') {
-            $query->whereIn('proyecto_id', $this->proyectosAccesibles($usuario));
-        }
-
-        return $query->first();
+        ];
     }
 }

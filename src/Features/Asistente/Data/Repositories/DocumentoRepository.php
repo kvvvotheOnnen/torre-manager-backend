@@ -4,12 +4,14 @@ namespace Features\Asistente\Data\Repositories;
 
 use App\Models\Documento as DocumentoModel;
 use App\Models\User;
+use Features\Archivos\Domain\Contracts\AlmacenArchivos;
 use Features\Asistente\Domain\Entities\Documento;
 use Features\Asistente\Domain\Repositories\DocumentoRepositoryInterface;
-use Illuminate\Support\Facades\Storage;
 
 final class DocumentoRepository implements DocumentoRepositoryInterface
 {
+    public function __construct(private readonly AlmacenArchivos $almacen) {}
+
     public function obtenerPorProyecto(string $proyectoId): ?Documento
     {
         $model = DocumentoModel::query()
@@ -45,9 +47,7 @@ final class DocumentoRepository implements DocumentoRepositoryInterface
     {
         DocumentoModel::query()->whereKey($documento->id())->delete();
 
-        if ($documento->ruta() !== '' && Storage::disk('local')->exists($documento->ruta())) {
-            Storage::disk('local')->delete($documento->ruta());
-        }
+        $this->almacen->eliminar($documento->ruta() !== '' ? $documento->ruta() : null);
     }
 
     public function administradorTieneProyecto(string $usuarioId, string $proyectoId): bool

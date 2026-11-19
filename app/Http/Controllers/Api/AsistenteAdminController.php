@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Asistente\SubirDocumentoRequest;
+use Features\Archivos\Domain\Contracts\AlmacenArchivos;
 use Features\Asistente\Domain\Entities\Documento;
 use Features\Asistente\Domain\Exceptions\DocumentoMuyGrandeException;
 use Features\Asistente\Domain\Exceptions\DocumentoNoDisponibleException;
@@ -15,8 +16,6 @@ use Features\Asistente\Domain\UseCases\ResolverProyectoAdministradorUseCase;
 use Features\Asistente\Domain\UseCases\SubirDocumentoUseCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 final class AsistenteAdminController extends Controller
 {
@@ -25,6 +24,7 @@ final class AsistenteAdminController extends Controller
         private readonly ObtenerDocumentoUseCase $obtenerDocumento,
         private readonly SubirDocumentoUseCase $subirDocumento,
         private readonly EliminarDocumentoUseCase $eliminarDocumento,
+        private readonly AlmacenArchivos $almacen,
     ) {}
 
     public function mostrar(Request $request): JsonResponse
@@ -64,19 +64,25 @@ final class AsistenteAdminController extends Controller
 
         $archivo = $request->file('archivo');
         $nombreOriginal = $archivo->getClientOriginalName();
-        $nombreArchivo = 'documento_'.now()->format('YmdHis').'_'.Str::random(6).'.pdf';
-        $rutaAlmacenada = $archivo->storeAs(
+        $rutaAlmacenada = $this->almacen->guardar(
+            $archivo->get(),
+            $nombreOriginal,
             "proyectos/{$proyectoId}",
-            $nombreArchivo,
-            'local',
         );
+        $rutaFisica = $this->almacen->rutaFisica($rutaAlmacenada);
+
+        if ($rutaFisica === null) {
+            $this->almacen->eliminar($rutaAlmacenada);
+
+            return response()->json(['message' => 'No se pudo procesar el documento.'], 422);
+        }
 
         try {
             $documento = $this->subirDocumento->execute(
                 proyectoId: $proyectoId,
                 subidoPor: (string) $request->user()->getAuthIdentifier(),
                 nombreOriginal: $nombreOriginal,
-                rutaFisica: Storage::disk('local')->path($rutaAlmacenada),
+                rutaFisica: $rutaFisica,
                 rutaAlmacenada: $rutaAlmacenada,
             );
         } catch (DocumentoYaExisteException $exception) {
@@ -122,9 +128,7 @@ final class AsistenteAdminController extends Controller
 
     private function eliminarArchivo(string $rutaAlmacenada): void
     {
-        if (Storage::disk('local')->exists($rutaAlmacenada)) {
-            Storage::disk('local')->delete($rutaAlmacenada);
-        }
+        $this->almacen->eliminar($rutaAlmacenada);
     }
 
     /**

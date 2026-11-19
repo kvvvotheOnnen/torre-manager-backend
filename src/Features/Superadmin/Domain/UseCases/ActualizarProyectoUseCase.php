@@ -3,7 +3,7 @@
 namespace Features\Superadmin\Domain\UseCases;
 
 use Features\Dashboard\Domain\Entities\ModuloGeneral;
-use Features\Superadmin\Domain\Entities\ModuloSistema;
+use Features\Dashboard\Domain\Entities\ModuloSistema;
 use Features\Superadmin\Domain\Entities\ProyectoDetalle;
 use Features\Superadmin\Domain\Exceptions\RecursoNoEncontradoException;
 use Features\Superadmin\Domain\Repositories\SuperadminRepositoryInterface;

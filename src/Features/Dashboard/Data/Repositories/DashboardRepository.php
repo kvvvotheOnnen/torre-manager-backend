@@ -6,11 +6,11 @@ use App\Models\Proyecto;
 use App\Models\User;
 use Features\Auth\Domain\Entities\Rol;
 use Features\Dashboard\Domain\Entities\ModuloGeneral;
+use Features\Dashboard\Domain\Entities\ModuloSistema;
 use Features\Dashboard\Domain\Entities\ProyectoConModulos;
 use Features\Dashboard\Domain\Exceptions\ProyectoNoDisponibleException;
 use Features\Dashboard\Domain\Repositories\DashboardRepositoryInterface;
 use Features\Superadmin\Domain\Entities\EstadoProyecto;
-use Features\Superadmin\Domain\Entities\ModuloSistema;
 use Illuminate\Database\Eloquent\Collection;
 
 final class DashboardRepository implements DashboardRepositoryInterface

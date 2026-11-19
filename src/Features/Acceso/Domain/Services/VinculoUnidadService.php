@@ -2,57 +2,32 @@
 
 namespace Features\Acceso\Domain\Services;
 
-use App\Models\UnidadPrincipal;
-use App\Models\UnidadUsuario;
-use Features\Acceso\Domain\Entities\TipoVinculo;
+use Features\Acceso\Domain\Entities\VinculoUnidad;
+use Features\Acceso\Domain\Repositories\VinculoUnidadRepositoryInterface;
 
 final class VinculoUnidadService
 {
-    public function esPropietarioActual(string $usuarioId, UnidadPrincipal $unidad): bool
+    public function __construct(
+        private readonly VinculoUnidadRepositoryInterface $vinculos,
+    ) {}
+
+    public function esPropietarioActual(string $usuarioId, string $unidadPrincipalId): bool
     {
-        return UnidadUsuario::query()
-            ->where('unidad_principal_id', $unidad->getKey())
-            ->where('usuario_id', $usuarioId)
-            ->where('tipo_vinculo', TipoVinculo::Propietario->value)
-            ->where('es_actual', true)
-            ->exists();
+        return $this->vinculos->esPropietarioActual($unidadPrincipalId, $usuarioId);
     }
 
-    public function esOcupanteActual(string $usuarioId, UnidadPrincipal $unidad): bool
+    public function esOcupanteActual(string $usuarioId, string $unidadPrincipalId): bool
     {
-        return UnidadUsuario::query()
-            ->where('unidad_principal_id', $unidad->getKey())
-            ->where('usuario_id', $usuarioId)
-            ->whereIn('tipo_vinculo', [
-                TipoVinculo::Arrendatario->value,
-                TipoVinculo::Residente->value,
-                TipoVinculo::Familiar->value,
-            ])
-            ->where('es_actual', true)
-            ->exists();
+        return $this->vinculos->esOcupanteActual($unidadPrincipalId, $usuarioId);
     }
 
-    public function propietarioActual(UnidadPrincipal $unidad): ?UnidadUsuario
+    public function propietarioActual(string $unidadPrincipalId): ?VinculoUnidad
     {
-        return UnidadUsuario::query()
-            ->with('usuario')
-            ->where('unidad_principal_id', $unidad->getKey())
-            ->where('tipo_vinculo', TipoVinculo::Propietario->value)
-            ->where('es_actual', true)
-            ->first();
+        return $this->vinculos->propietarioActual($unidadPrincipalId);
     }
 
-    public function ocupanteActual(UnidadPrincipal $unidad): ?UnidadUsuario
+    public function ocupanteActual(string $unidadPrincipalId): ?VinculoUnidad
     {
-        return UnidadUsuario::query()
-            ->with('usuario')
-            ->where('unidad_principal_id', $unidad->getKey())
-            ->whereIn('tipo_vinculo', [
-                TipoVinculo::Arrendatario->value,
-                TipoVinculo::Residente->value,
-            ])
-            ->where('es_actual', true)
-            ->orderByRaw("case when tipo_vinculo = 'arrendatario' then 0 else 1 end")
-            ->first();
+        return $this->vinculos->ocupanteActual($unidadPrincipalId);
     }
 }

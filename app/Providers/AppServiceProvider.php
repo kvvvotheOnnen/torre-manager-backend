@@ -22,8 +22,10 @@ use Features\Dashboard\Data\AutorizadorCapacidadesPorRol;
 use Features\Dashboard\Data\CatalogoFuncionesEnConfig;
 use Features\Dashboard\Data\Repositories\DashboardRepository;
 use Features\Dashboard\Data\ResolutorAmbitoUnidad;
+use Features\Dashboard\Data\VerificadorModuloProyecto;
 use Features\Dashboard\Domain\Contracts\AutorizadorCapacidades;
 use Features\Dashboard\Domain\Contracts\ResolutorAmbito;
+use Features\Dashboard\Domain\Contracts\VerificadorModulo;
 use Features\Dashboard\Domain\Repositories\CatalogoFuncionesRepositoryInterface;
 use Features\Dashboard\Domain\Repositories\DashboardRepositoryInterface;
 use Features\Infraestructura\Data\Repositories\InfraestructuraRepository;
@@ -61,6 +63,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(CatalogoFuncionesRepositoryInterface::class, CatalogoFuncionesEnConfig::class);
         $this->app->bind(AutorizadorCapacidades::class, AutorizadorCapacidadesPorRol::class);
         $this->app->bind(ResolutorAmbito::class, ResolutorAmbitoUnidad::class);
+        $this->app->bind(VerificadorModulo::class, VerificadorModuloProyecto::class);
         $this->app->bind(AlmacenArchivos::class, fn (): AlmacenArchivos => (new FabricaAlmacenes)->crear());
         $this->app->bind(InfraestructuraRepositoryInterface::class, InfraestructuraRepository::class);
         $this->app->bind(PaqueteriaRepositoryInterface::class, PaqueteriaRepository::class);

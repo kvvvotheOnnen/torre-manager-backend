@@ -31,4 +31,12 @@ interface AlmacenArchivos
     public function url(?string $ruta): ?string;
 
     public function existe(?string $ruta): bool;
+
+    /**
+     * Ruta física en el servidor, si el disco subyacente la expone.
+     *
+     * Solo se usa para procesos locales (p. ej. extraer texto de un PDF).
+     * Los discos remotos devuelven null.
+     */
+    public function rutaFisica(string $ruta): ?string;
 }

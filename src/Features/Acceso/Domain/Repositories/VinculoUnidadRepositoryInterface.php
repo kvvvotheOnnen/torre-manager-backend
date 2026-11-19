@@ -3,6 +3,7 @@
 namespace Features\Acceso\Domain\Repositories;
 
 use Features\Acceso\Domain\Entities\TipoVinculo;
+use Features\Acceso\Domain\Entities\UnidadContexto;
 use Features\Acceso\Domain\Entities\VinculoUnidad;
 
 interface VinculoUnidadRepositoryInterface
@@ -35,4 +36,21 @@ interface VinculoUnidadRepositoryInterface
     public function propietarioActual(string $unidadPrincipalId): ?VinculoUnidad;
 
     public function ocupanteActual(string $unidadPrincipalId): ?VinculoUnidad;
+
+    public function esPropietarioActual(string $unidadPrincipalId, string $usuarioId): bool;
+
+    public function esOcupanteActual(string $unidadPrincipalId, string $usuarioId): bool;
+
+    /** Contexto de una unidad con su proyecto y ocupantes actuales. */
+    public function contextoUnidad(string $unidadPrincipalId): ?UnidadContexto;
+
+    /**
+     * Contextos de todas las unidades, opcionalmente acotados a proyectos.
+     *
+     * `null` significa todos los proyectos (uso exclusivo de superadmin).
+     *
+     * @param  int[]|null  $proyectoIds
+     * @return UnidadContexto[]
+     */
+    public function contextosDeUnidades(?array $proyectoIds = null): array;
 }

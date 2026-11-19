@@ -2,10 +2,10 @@
 
 namespace Features\Superadmin\Domain\Repositories;
 
+use Features\Dashboard\Domain\Entities\ModuloSistema;
 use Features\Infraestructura\Domain\Entities\TipoAgrupacion;
 use Features\Infraestructura\Domain\Entities\TipoUnidadAccesoria;
 use Features\Superadmin\Domain\Entities\Administrador;
-use Features\Superadmin\Domain\Entities\ModuloSistema;
 use Features\Superadmin\Domain\Entities\ProyectoDetalle;
 use Features\Superadmin\Domain\Entities\ResumenProyecto;
 use Features\Superadmin\Domain\Entities\TipoCondominio;

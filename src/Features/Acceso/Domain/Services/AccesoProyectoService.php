@@ -2,8 +2,6 @@
 
 namespace Features\Acceso\Domain\Services;
 
-use App\Models\UnidadUsuario;
-use App\Models\User;
 use Features\Acceso\Domain\Entities\MembresiaProyecto;
 use Features\Acceso\Domain\Repositories\MembresiaProyectoRepositoryInterface;
 use Features\Auth\Domain\Entities\Rol;
@@ -24,36 +22,26 @@ final class AccesoProyectoService
     public function proyectosIdsDe(string $usuarioId): array
     {
         $ids = $this->membresias->proyectosIds($usuarioId);
-        $usuario = User::query()->find($usuarioId);
 
-        if ($usuario?->proyecto_id !== null) {
-            $ids[] = (int) $usuario->proyecto_id;
+        $proyectoLegacy = $this->membresias->proyectoLegacyDeUsuario($usuarioId);
+        if ($proyectoLegacy !== null) {
+            $ids[] = (int) $proyectoLegacy;
         }
 
-        $idsUnidades = UnidadUsuario::query()
-            ->where('usuario_id', $usuarioId)
-            ->where('es_actual', true)
-            ->whereHas('unidadPrincipal.agrupacion')
-            ->with('unidadPrincipal.agrupacion:id,proyecto_id')
-            ->get()
-            ->map(fn (UnidadUsuario $v) => (int) $v->unidadPrincipal?->agrupacion?->proyecto_id)
-            ->filter()
-            ->all();
-
-        $ids = array_merge($ids, $idsUnidades);
+        $ids = array_merge($ids, $this->membresias->proyectosPorUnidades($usuarioId));
 
         return array_values(array_unique(array_filter($ids)));
     }
 
     public function rolEn(string $usuarioId, string $proyectoId): ?Rol
     {
-        $usuario = User::query()->find($usuarioId);
+        $rolGlobal = $this->membresias->rolGlobalDeUsuario($usuarioId);
 
-        if ($usuario === null) {
+        if ($rolGlobal === null) {
             return null;
         }
 
-        if ($usuario->rol === Rol::Superadmin->value) {
+        if ($rolGlobal === Rol::Superadmin) {
             return Rol::Superadmin;
         }
 
@@ -63,21 +51,22 @@ final class AccesoProyectoService
             return $rol;
         }
 
-        if ($usuario->proyecto_id !== null && (string) $usuario->proyecto_id === $proyectoId) {
-            return Rol::tryFrom($usuario->rol);
+        $proyectoLegacy = $this->membresias->proyectoLegacyDeUsuario($usuarioId);
+
+        if ($proyectoLegacy !== null && $proyectoLegacy === $proyectoId) {
+            return Rol::tryFrom($rolGlobal->value);
         }
 
-        $tieneUnidad = UnidadUsuario::query()
-            ->where('usuario_id', $usuarioId)
-            ->where('es_actual', true)
-            ->whereHas('unidadPrincipal.agrupacion', fn ($q) => $q->where('proyecto_id', $proyectoId))
-            ->exists();
-
-        if ($tieneUnidad) {
-            return $usuario->proyecto_id !== null ? Rol::tryFrom($usuario->rol) : Rol::Residente;
+        if ($this->membresias->tieneUnidadActualEnProyecto($usuarioId, $proyectoId)) {
+            return $proyectoLegacy !== null ? Rol::tryFrom($rolGlobal->value) : Rol::Residente;
         }
 
         return null;
+    }
+
+    public function esSuperadmin(string $usuarioId): bool
+    {
+        return $this->membresias->rolGlobalDeUsuario($usuarioId) === Rol::Superadmin;
     }
 
     public function puedeAcceder(string $usuarioId, string $proyectoId): bool

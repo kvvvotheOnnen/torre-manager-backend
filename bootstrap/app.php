@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureCapacidad;
+use App\Http\Middleware\EnsureModulo;
 use App\Http\Middleware\EnsureProjectRole;
 use App\Http\Middleware\EnsureRole;
 use Illuminate\Foundation\Application;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => EnsureRole::class,
             'role.proyecto' => EnsureProjectRole::class,
             'puede' => EnsureCapacidad::class,
+            'modulo' => EnsureModulo::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

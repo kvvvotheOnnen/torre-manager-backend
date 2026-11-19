@@ -213,12 +213,12 @@ class AsistenteTest extends TestCase
 
     public function test_archivo_que_no_es_pdf_es_rechazado(): void
     {
-        $this->adminConProyecto();
+        [, $proyecto] = $this->adminConProyecto();
 
         $this->post(
             '/api/admin/asistente/documento',
             ['archivo' => UploadedFile::fake()->create('notas.txt', 10, 'text/plain')],
-            ['Accept' => 'application/json'],
+            ['Accept' => 'application/json', 'X-Proyecto-Id' => (string) $proyecto->getKey()],
         )->assertStatus(422);
     }
 
@@ -232,14 +232,14 @@ class AsistenteTest extends TestCase
             }
         });
 
-        $this->adminConProyecto();
+        [, $proyecto] = $this->adminConProyecto();
 
         $this->post(
             '/api/admin/asistente/documento',
             [
                 'archivo' => UploadedFile::fake()->create('grande.pdf', 100, 'application/pdf'),
             ],
-            ['Accept' => 'application/json'],
+            ['Accept' => 'application/json', 'X-Proyecto-Id' => (string) $proyecto->getKey()],
         )->assertStatus(422);
     }
 

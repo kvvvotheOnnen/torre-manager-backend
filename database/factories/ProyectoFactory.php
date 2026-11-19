@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Proyecto;
-use Features\Superadmin\Domain\Entities\ModuloSistema;
+use Features\Dashboard\Domain\Entities\ModuloSistema;
 use Features\Superadmin\Domain\Entities\TipoCondominio;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

@@ -42,6 +42,7 @@ return [
 
     'carpetas' => [
         'paquetes',
+        'proyectos',
         'servicios',
         'marketplace',
     ],

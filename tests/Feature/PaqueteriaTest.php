@@ -94,7 +94,9 @@ class PaqueteriaTest extends TestCase
 
         Sanctum::actingAs($residente);
 
-        $response = $this->getJson('/api/paqueteria');
+        $response = $this->getJson('/api/paqueteria', [
+            'X-Proyecto-Id' => $proyecto->getKey(),
+        ]);
 
         $response->assertOk()
             ->assertJsonCount(1, 'paquetes')
@@ -135,7 +137,7 @@ class PaqueteriaTest extends TestCase
 
         $response = $this->patchJson("/api/paqueteria/{$paquete->getKey()}/retirar", [
             'retirado_por_nombre' => 'Nombre Apellido',
-        ]);
+        ], ['X-Proyecto-Id' => $proyecto->getKey()]);
 
         $response->assertOk()
             ->assertJsonPath('estado', 'retirado')
@@ -162,8 +164,9 @@ class PaqueteriaTest extends TestCase
 
         Sanctum::actingAs($conserje);
 
-        $this->patchJson("/api/paqueteria/{$paquete->getKey()}/retirar")
-            ->assertUnprocessable()
+        $this->patchJson("/api/paqueteria/{$paquete->getKey()}/retirar", [], [
+            'X-Proyecto-Id' => $proyecto->getKey(),
+        ])->assertUnprocessable()
             ->assertJsonValidationErrors('retirado_por_nombre');
 
         $this->assertDatabaseHas('paquetes', [
@@ -187,7 +190,7 @@ class PaqueteriaTest extends TestCase
 
         Sanctum::actingAs($residente);
 
-        $this->getJson('/api/paqueteria')
+        $this->getJson('/api/paqueteria', ['X-Proyecto-Id' => $proyecto->getKey()])
             ->assertOk()
             ->assertJsonPath('paquetes.0.retirado_por_nombre', 'Nombre Apellido');
     }
@@ -221,7 +224,9 @@ class PaqueteriaTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $response = $this->getJson('/api/paqueteria');
+        $response = $this->getJson('/api/paqueteria', [
+            'X-Proyecto-Id' => $proyecto->getKey(),
+        ]);
 
         $response->assertOk()
             ->assertJsonCount(3, 'paquetes');
@@ -229,13 +234,16 @@ class PaqueteriaTest extends TestCase
 
     public function test_usuario_sin_proyectos_no_ve_paquetes_de_otros(): void
     {
-        $proyecto = Proyecto::factory()->create();
-        Paquete::factory()->create(['proyecto_id' => $proyecto->getKey()]);
-        $admin = User::factory()->administrador()->create(['proyecto_id' => null]);
+        $proyectoPropio = Proyecto::factory()->create();
+        $proyectoAjeno = Proyecto::factory()->create();
+        Paquete::factory()->create(['proyecto_id' => $proyectoAjeno->getKey()]);
+        $admin = User::factory()->administrador()->create([
+            'proyecto_id' => $proyectoPropio->getKey(),
+        ]);
 
         Sanctum::actingAs($admin);
 
-        $this->getJson('/api/paqueteria')
+        $this->getJson('/api/paqueteria', ['X-Proyecto-Id' => $proyectoPropio->getKey()])
             ->assertOk()
             ->assertJsonCount(0, 'paquetes');
     }
@@ -252,7 +260,7 @@ class PaqueteriaTest extends TestCase
         Sanctum::actingAs($admin);
 
         $this->getJson('/api/paqueteria?proyecto_id='.$proyectoAjeno->getKey())
-            ->assertNotFound();
+            ->assertForbidden();
     }
 
     public function test_registro_rechaza_proyecto_distinto_al_de_la_unidad(): void
@@ -334,7 +342,7 @@ class PaqueteriaTest extends TestCase
             'descripcion' => 'Descripción manipulada',
             'remitente' => 'Remitente de prueba',
             'unidad_principal_id' => $unidadAjena->getKey(),
-        ])->assertUnprocessable();
+        ], ['X-Proyecto-Id' => $proyectoPaquete->getKey()])->assertUnprocessable();
 
         $this->assertDatabaseHas('paquetes', [
             'id' => $paquete->getKey(),
@@ -360,8 +368,9 @@ class PaqueteriaTest extends TestCase
 
         Sanctum::actingAs($conserje);
 
-        $this->getJson('/api/paqueteria/unidades')
-            ->assertOk()
+        $this->getJson('/api/paqueteria/unidades', [
+            'X-Proyecto-Id' => $proyectoAutorizado->getKey(),
+        ])->assertOk()
             ->assertJsonCount(1, 'unidades')
             ->assertJsonPath('unidades.0.id', $unidadAutorizada->getKey())
             ->assertJsonPath('unidades.0.proyecto_id', $proyectoAutorizado->getKey());
@@ -383,7 +392,7 @@ class PaqueteriaTest extends TestCase
 
         $this->patchJson('/api/paqueteria/'.$paquete->getKey().'/retirar', [
             'retirado_por_nombre' => 'Persona de prueba',
-        ])->assertNotFound();
+        ], ['X-Proyecto-Id' => $proyectoAutorizado->getKey()])->assertNotFound();
 
         $this->assertDatabaseHas('paquetes', [
             'id' => $paquete->getKey(),
@@ -412,7 +421,7 @@ class PaqueteriaTest extends TestCase
             'descripcion' => 'Descripción actualizada',
             'remitente' => 'Remitente de prueba',
             'unidad_principal_id' => $unidad->getKey(),
-        ])->assertNotFound();
+        ], ['X-Proyecto-Id' => $proyectoAutorizado->getKey()])->assertNotFound();
 
         $this->assertDatabaseHas('paquetes', [
             'id' => $paquete->getKey(),

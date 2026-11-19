@@ -34,7 +34,7 @@ Route::middleware(['auth:sanctum', 'role.proyecto:administrador,superadmin,propi
     Route::get('dashboard/modulos', [DashboardController::class, 'modulos']);
 });
 
-Route::middleware(['auth:sanctum', 'role.proyecto:administrador'])->prefix('admin/asistente')->group(function (): void {
+Route::middleware(['auth:sanctum', 'role.proyecto:administrador', 'modulo:asistente_ia_admin'])->prefix('admin/asistente')->group(function (): void {
     Route::get('documento', [AsistenteAdminController::class, 'mostrar']);
     Route::post('documento', [AsistenteAdminController::class, 'subir']);
     Route::delete('documento', [AsistenteAdminController::class, 'eliminar']);
@@ -45,7 +45,7 @@ Route::middleware(['auth:sanctum', 'role.proyecto:residente,propietario'])->pref
     Route::post('asistente/consultas', [AsistenteResidenteController::class, 'consultar']);
 });
 
-Route::middleware(['auth:sanctum', 'role.proyecto:residente,propietario,conserje,administrador,superadmin'])->group(function (): void {
+Route::middleware(['auth:sanctum', 'puede:paqueteria.ver'])->group(function (): void {
     Route::get('paqueteria', [PaqueteriaController::class, 'index']);
 });
 
@@ -55,7 +55,7 @@ Route::middleware(['auth:sanctum', 'role.proyecto:administrador,superadmin'])->p
     Route::delete('vinculos/{vinculo}', [VinculoUnidadController::class, 'destroy'])->whereNumber('vinculo');
 });
 
-Route::middleware(['auth:sanctum', 'role.proyecto:administrador,conserje,superadmin'])->prefix('admin')->group(function (): void {
+Route::middleware(['auth:sanctum', 'role.proyecto:administrador,conserje,superadmin', 'modulo:solicitudes_residente'])->prefix('admin')->group(function (): void {
     Route::get('solicitudes-residentes', [SolicitudResidenteController::class, 'index']);
     Route::get('solicitudes-residentes/historial', [SolicitudResidenteController::class, 'historial']);
     Route::get('solicitudes-residentes/{id}', [SolicitudResidenteController::class, 'show'])->whereNumber('id');
@@ -63,7 +63,7 @@ Route::middleware(['auth:sanctum', 'role.proyecto:administrador,conserje,superad
     Route::post('solicitudes-residentes/{id}/rechazar', [SolicitudResidenteController::class, 'rechazar'])->whereNumber('id');
 });
 
-Route::middleware(['auth:sanctum', 'role.proyecto:conserje,administrador,superadmin'])->group(function (): void {
+Route::middleware(['auth:sanctum', 'puede:paqueteria.gestionar'])->group(function (): void {
     Route::get('paqueteria/unidades', [PaqueteriaController::class, 'unidades']);
     Route::post('paqueteria', [PaqueteriaController::class, 'registrar']);
     Route::put('paqueteria/{id}', [PaqueteriaController::class, 'actualizar'])->whereNumber('id');
@@ -116,7 +116,7 @@ Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->gr
     Route::delete('proyectos/{proyecto}', [SuperadminController::class, 'eliminarProyecto'])->whereNumber('proyecto');
 });
 
-Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('infraestructura')->group(function (): void {
+Route::middleware(['auth:sanctum', 'role:superadmin', 'modulo:infraestructura'])->prefix('infraestructura')->group(function (): void {
     Route::get('proyecto', [InfraestructuraController::class, 'miProyecto']);
     Route::post('proyectos', [InfraestructuraController::class, 'crearProyecto']);
     Route::post('agrupaciones', [InfraestructuraController::class, 'crearAgrupacion']);
