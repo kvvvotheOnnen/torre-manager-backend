@@ -74,3 +74,16 @@
 - Tests: caso unitario del normalizador y caso feature del borrador con
   `unidades: []`; se retira el test que exigía el mínimo.
 - Verificación: **182 tests OK**.
+
+## Corrección: asignación de accesorias desde el wizard
+
+- `EnsureModulo` ahora exime al superadmin global igual que
+  `VerificadorModuloProyecto`: no le exige `X-Proyecto-Id` para operar en
+  módulos transversales (infraestructura). Antes, el PATCH de asignación de
+  estacionamientos/bodegas del wizard respondía 404 "Proyecto no encontrado."
+  porque el wizard no tiene proyecto activo en el store del tenant.
+- Endpoints no-superadmin conservan la exigencia de proyecto y la verificación
+  fail-safe del módulo.
+- Test de regresión: superadmin asigna una accesoria sin header ni
+  `proyecto_id` (flujo real del wizard).
+- Verificación: **183 tests OK**.

@@ -74,6 +74,36 @@ class InfraestructuraAccesoriasTest extends TestCase
         ]);
     }
 
+    public function test_superadmin_asigna_accesoria_sin_proyecto_activo(): void
+    {
+        $proyecto = Proyecto::factory()->create();
+        $agrupacion = Agrupacion::factory()->for($proyecto)->create([
+            'nombre' => 'Torre A',
+            'tipo' => 'torre',
+        ]);
+        $unidad = UnidadPrincipal::factory()->for($agrupacion)->create([
+            'identificador' => '101',
+        ]);
+        $accesoria = UnidadAccesoria::factory()->for($proyecto)->create([
+            'identificador' => 'E-001',
+            'tipo' => 'estacionamiento',
+            'asignacion' => 'otro',
+            'unidad_principal_id' => null,
+        ]);
+        Sanctum::actingAs(User::factory()->superadmin()->create());
+
+        // Flujo del wizard: no hay X-Proyecto-Id ni proyecto_id en el request.
+        $this->patchJson(
+            "/api/infraestructura/unidades-accesorias/{$accesoria->getKey()}/asignacion",
+            [
+                'asignacion' => 'departamento',
+                'unidad_principal_id' => $unidad->getKey(),
+            ],
+        )->assertOk()
+            ->assertJsonPath('asignacion', 'departamento')
+            ->assertJsonPath('unidad_principal_id', (string) $unidad->getKey());
+    }
+
     public function test_asigna_visita_y_libera_la_unidad_principal(): void
     {
         $proyecto = Proyecto::factory()->create();
