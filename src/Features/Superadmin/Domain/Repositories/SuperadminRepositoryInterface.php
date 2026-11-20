@@ -31,9 +31,17 @@ interface SuperadminRepositoryInterface
     /**
      * Crea una cuenta con rol administrador.
      *
+     * @param  string[]|null  $proyectosIds
+     *
      * @throws EmailDuplicadoException
+     * @throws RecursoNoEncontradoException
      */
-    public function crearAdministrador(string $nombre, string $correo, string $password): Administrador;
+    public function crearAdministrador(
+        string $nombre,
+        string $correo,
+        string $password,
+        ?array $proyectosIds = null,
+    ): Administrador;
 
     /**
      * Crea un proyecto (tenant) con su estructura de infraestructura y anexa a

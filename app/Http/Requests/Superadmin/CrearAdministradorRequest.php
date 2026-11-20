@@ -20,6 +20,9 @@ class CrearAdministradorRequest extends FormRequest
             'nombre' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:usuarios,email'],
             'password' => ['required', 'string', 'min:8'],
+
+            'proyecto_ids' => ['sometimes', 'array'],
+            'proyecto_ids.*' => ['integer', 'exists:proyectos,id'],
         ];
     }
 }

@@ -16,11 +16,17 @@ final class CrearAdministradorUseCase
     ) {}
 
     /**
+     * @param  string[]|null  $proyectosIds
+     *
      * @throws InvalidArgumentException
      * @throws EmailDuplicadoException
      */
-    public function execute(string $nombre, string $correo, string $password): Administrador
-    {
+    public function execute(
+        string $nombre,
+        string $correo,
+        string $password,
+        ?array $proyectosIds = null,
+    ): Administrador {
         $nombre = trim($nombre);
         $correo = trim($correo);
 
@@ -36,6 +42,11 @@ final class CrearAdministradorUseCase
             throw new InvalidArgumentException('La contraseña debe tener al menos '.self::PASSWORD_MIN_LENGTH.' caracteres.');
         }
 
-        return $this->repository->crearAdministrador($nombre, $correo, $password);
+        return $this->repository->crearAdministrador(
+            $nombre,
+            $correo,
+            $password,
+            $proyectosIds,
+        );
     }
 }

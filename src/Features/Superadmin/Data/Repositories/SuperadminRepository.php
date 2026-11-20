@@ -12,6 +12,7 @@ use Features\Dashboard\Domain\Entities\ModuloGeneral;
 use Features\Dashboard\Domain\Entities\ModuloSistema;
 use Features\Superadmin\Domain\Entities\Administrador;
 use Features\Superadmin\Domain\Entities\EstadoProyecto;
+use Features\Superadmin\Domain\Entities\ProyectoAdministrador;
 use Features\Superadmin\Domain\Entities\ProyectoDetalle;
 use Features\Superadmin\Domain\Entities\ResumenProyecto;
 use Features\Superadmin\Domain\Entities\TipoCondominio;
@@ -48,39 +49,82 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
     {
         return User::query()
             ->where('rol', Rol::Administrador->value)
+            ->with(['proyectos' => fn ($query) => $query->select('proyectos.id', 'proyectos.nombre')])
             ->orderBy('nombre')
             ->get()
-            ->map(static fn (User $user) => new Administrador(
-                id: (string) $user->getKey(),
-                nombre: $user->nombre,
-                correo: $user->email,
-                rol: Rol::Administrador,
-            ))
+            ->map(fn (User $user) => $this->toAdministrador($user))
             ->all();
     }
 
-    public function crearAdministrador(string $nombre, string $correo, string $password): Administrador
+    private function toAdministrador(User $user): Administrador
     {
-        try {
-            $user = User::create([
-                'nombre' => $nombre,
-                'email' => $correo,
-                'password' => Hash::make($password),
-                'rol' => Rol::Administrador->value,
-                'proyecto_id' => null,
-            ]);
-        } catch (QueryException $exception) {
-            Log::error('No fue posible crear el administrador.', ['exception' => $exception->getMessage()]);
-
-            throw new EmailDuplicadoException('Ya existe un usuario con ese correo electrónico.');
-        }
+        $proyectos = $user->relationLoaded('proyectos')
+            ? $user->proyectos
+                ->map(static fn (Proyecto $proyecto) => new ProyectoAdministrador(
+                    id: (string) $proyecto->getKey(),
+                    nombre: (string) $proyecto->nombre,
+                ))
+                ->all()
+            : [];
 
         return new Administrador(
             id: (string) $user->getKey(),
             nombre: $user->nombre,
             correo: $user->email,
             rol: Rol::Administrador,
+            proyectos: $proyectos,
         );
+    }
+
+    public function crearAdministrador(
+        string $nombre,
+        string $correo,
+        string $password,
+        ?array $proyectosIds = null,
+    ): Administrador {
+        $proyectosIds = array_values(array_unique(array_map(
+            static fn ($id) => (string) $id,
+            $proyectosIds ?? [],
+        )));
+
+        return DB::transaction(function () use ($nombre, $correo, $password, $proyectosIds) {
+            if ($proyectosIds !== []) {
+                $encontrados = Proyecto::query()
+                    ->whereIn('id', $proyectosIds)
+                    ->pluck('id')
+                    ->map(static fn ($id) => (string) $id)
+                    ->all();
+
+                if (count($encontrados) !== count($proyectosIds)) {
+                    throw new RecursoNoEncontradoException('Uno o más proyectos no existen.');
+                }
+            }
+
+            try {
+                $user = User::create([
+                    'nombre' => $nombre,
+                    'email' => $correo,
+                    'password' => Hash::make($password),
+                    'rol' => Rol::Administrador->value,
+                    'proyecto_id' => null,
+                ]);
+            } catch (QueryException $exception) {
+                Log::error('No fue posible crear el administrador.', ['exception' => $exception->getMessage()]);
+
+                throw new EmailDuplicadoException('Ya existe un usuario con ese correo electrónico.');
+            }
+
+            foreach ($proyectosIds as $proyectoId) {
+                $user->proyectos()->attach($proyectoId, [
+                    'rol' => Rol::Administrador->value,
+                    'estado' => 'activo',
+                ]);
+            }
+
+            $user->load(['proyectos' => fn ($query) => $query->select('proyectos.id', 'proyectos.nombre')]);
+
+            return $this->toAdministrador($user);
+        });
     }
 
     public function crearProyectoConAdministradores(

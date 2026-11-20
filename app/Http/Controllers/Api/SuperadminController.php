@@ -210,6 +210,13 @@ final class SuperadminController extends Controller
                 'nombre' => $administrador->nombre(),
                 'email' => $administrador->correo(),
                 'rol' => $administrador->rol()->value,
+                'proyectos' => array_map(
+                    static fn ($proyecto) => [
+                        'id' => $proyecto->id(),
+                        'nombre' => $proyecto->nombre(),
+                    ],
+                    $administrador->proyectos(),
+                ),
             ],
             $this->listarAdministradoresUseCase->execute(),
         );
@@ -224,11 +231,16 @@ final class SuperadminController extends Controller
                 $request->string('nombre')->toString(),
                 $request->string('email')->toString(),
                 $request->string('password')->toString(),
+                $request->has('proyecto_ids')
+                    ? array_map('strval', $request->input('proyecto_ids', []))
+                    : null,
             );
         } catch (InvalidArgumentException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
         } catch (EmailDuplicadoException $exception) {
             return response()->json(['message' => $exception->getMessage()], 409);
+        } catch (RecursoNoEncontradoException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 404);
         }
 
         return response()->json([
@@ -236,6 +248,13 @@ final class SuperadminController extends Controller
             'nombre' => $administrador->nombre(),
             'email' => $administrador->correo(),
             'rol' => $administrador->rol()->value,
+            'proyectos' => array_map(
+                static fn ($proyecto) => [
+                    'id' => $proyecto->id(),
+                    'nombre' => $proyecto->nombre(),
+                ],
+                $administrador->proyectos(),
+            ),
         ], 201);
     }
 
