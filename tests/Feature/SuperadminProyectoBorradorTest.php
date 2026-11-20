@@ -105,6 +105,39 @@ class SuperadminProyectoBorradorTest extends TestCase
             ->assertJsonCount(1, 'proyectos');
     }
 
+    public function test_guarda_modulos_globales_deshabilitados_en_el_borrador(): void
+    {
+        $this->autenticarSuperadmin();
+
+        $id = $this->postJson('/api/superadmin/proyectos/borrador', [
+            'nombre' => 'Proyecto con globales apagados',
+        ])->assertCreated()->json('id');
+
+        $this->patchJson("/api/superadmin/proyectos/{$id}/borrador", [
+            'modulos' => ['infraestructura'],
+            'modulos_deshabilitados' => ['paqueteria', 'gastos_comunes'],
+        ])->assertOk();
+
+        $this->assertSame(
+            ['paqueteria', 'gastos_comunes'],
+            Proyecto::query()->findOrFail($id)->modulos_deshabilitados,
+        );
+    }
+
+    public function test_rechaza_modulos_globales_deshabilitados_desconocidos(): void
+    {
+        $this->autenticarSuperadmin();
+
+        $id = $this->postJson('/api/superadmin/proyectos/borrador', [
+            'nombre' => 'Proyecto con global inválido',
+        ])->assertCreated()->json('id');
+
+        $this->patchJson("/api/superadmin/proyectos/{$id}/borrador", [
+            'modulos_deshabilitados' => ['modulo-inexistente'],
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('modulos_deshabilitados.0');
+    }
+
     public function test_no_permite_finalizar_sin_estructura_administradores_y_modulos(): void
     {
         $this->autenticarSuperadmin();

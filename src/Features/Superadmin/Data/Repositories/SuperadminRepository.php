@@ -278,6 +278,7 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
         ?array $clasificaciones,
         ?array $instalaciones,
         ?array $modulos,
+        ?array $modulosDeshabilitados,
         ?array $administradoresIds,
         bool $resetEstructura,
     ): ProyectoDetalle {
@@ -308,6 +309,7 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
             $clasificaciones,
             $instalaciones,
             $modulos,
+            $modulosDeshabilitados,
             $administradores,
             $resetEstructura,
         ) {
@@ -330,6 +332,10 @@ final class SuperadminRepository implements SuperadminRepositoryInterface
                     static fn (ModuloSistema $modulo) => $modulo->value,
                     $modulos,
                 );
+            }
+
+            if ($modulosDeshabilitados !== null) {
+                $atributos['modulos_deshabilitados'] = array_values($modulosDeshabilitados);
             }
 
             if ($atributos !== []) {

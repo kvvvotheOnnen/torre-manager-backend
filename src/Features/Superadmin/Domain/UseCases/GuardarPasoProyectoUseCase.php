@@ -2,6 +2,7 @@
 
 namespace Features\Superadmin\Domain\UseCases;
 
+use Features\Dashboard\Domain\Entities\ModuloGeneral;
 use Features\Dashboard\Domain\Entities\ModuloSistema;
 use Features\Superadmin\Domain\Entities\ProyectoDetalle;
 use Features\Superadmin\Domain\Entities\TipoCondominio;
@@ -28,6 +29,7 @@ final class GuardarPasoProyectoUseCase
      * @param  array<int, array<string, mixed>>|null  $clasificaciones
      * @param  array<int, array<string, mixed>>|null  $instalaciones
      * @param  string[]|null  $modulos
+     * @param  string[]|null  $modulosDeshabilitados
      * @param  string[]|null  $administradoresIds
      *
      * @throws InvalidArgumentException
@@ -42,6 +44,7 @@ final class GuardarPasoProyectoUseCase
         ?array $clasificaciones = null,
         ?array $instalaciones = null,
         ?array $modulos = null,
+        ?array $modulosDeshabilitados = null,
         ?array $administradoresIds = null,
         bool $resetEstructura = false,
         bool $finalizar = false,
@@ -114,6 +117,20 @@ final class GuardarPasoProyectoUseCase
             }
         }
 
+        $modulosDeshabilitadosValidos = null;
+        if ($modulosDeshabilitados !== null) {
+            $modulosDeshabilitadosValidos = [];
+            foreach ($modulosDeshabilitados as $modulo) {
+                $enum = ModuloGeneral::tryFrom((string) $modulo);
+
+                if ($enum === null) {
+                    throw new InvalidArgumentException("El módulo global '{$modulo}' no es válido.");
+                }
+
+                $modulosDeshabilitadosValidos[] = $enum->value;
+            }
+        }
+
         $this->repository->guardarPasoProyecto(
             $id,
             $nombre,
@@ -123,6 +140,7 @@ final class GuardarPasoProyectoUseCase
             $clasificacionesNormalizadas,
             $instalacionesNormalizadas,
             $modulosValidos,
+            $modulosDeshabilitadosValidos,
             $administradoresIds,
             $resetEstructura,
         );

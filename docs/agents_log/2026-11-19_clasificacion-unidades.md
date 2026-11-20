@@ -87,3 +87,12 @@
 - Test de regresión: superadmin asigna una accesoria sin header ni
   `proyecto_id` (flujo real del wizard).
 - Verificación: **183 tests OK**.
+
+## Corrección: módulos globales en el wizard de creación
+
+- El paso borrador ahora acepta `modulos_deshabilitados`: request, caso de uso
+  (valida contra `ModuloGeneral`), repositorio y controller.
+- Con esto el wizard puede persistir el estado de los módulos globales al crear
+  el proyecto, igual que la pantalla de edición.
+- Tests: guardado de globales deshabilitados y rechazo de ID desconocido.
+- Verificación: **185 tests OK**.

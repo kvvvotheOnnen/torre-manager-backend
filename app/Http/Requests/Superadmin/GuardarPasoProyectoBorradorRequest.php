@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Superadmin;
 
+use Features\Dashboard\Domain\Entities\ModuloGeneral;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class GuardarPasoProyectoBorradorRequest extends FormRequest
 {
@@ -50,6 +52,15 @@ class GuardarPasoProyectoBorradorRequest extends FormRequest
 
             'modulos' => ['sometimes', 'array'],
             'modulos.*' => ['string', 'in:infraestructura'],
+
+            'modulos_deshabilitados' => ['sometimes', 'array'],
+            'modulos_deshabilitados.*' => [
+                'string',
+                Rule::in(array_map(
+                    static fn (ModuloGeneral $modulo) => $modulo->value,
+                    ModuloGeneral::cases(),
+                )),
+            ],
 
             'admin_ids' => ['sometimes', 'array'],
             'admin_ids.*' => ['integer'],

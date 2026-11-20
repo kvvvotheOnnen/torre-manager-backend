@@ -113,6 +113,7 @@ final class SuperadminController extends Controller
                 $request->has('clasificaciones') ? $request->input('clasificaciones', []) : null,
                 $request->has('instalaciones') ? $request->input('instalaciones', []) : null,
                 $request->has('modulos') ? array_map('strval', $request->input('modulos', [])) : null,
+                $request->has('modulos_deshabilitados') ? array_map('strval', $request->input('modulos_deshabilitados', [])) : null,
                 $request->has('admin_ids') ? array_map('strval', $request->input('admin_ids', [])) : null,
                 $request->boolean('reset_estructura'),
                 $request->boolean('finalizar'),

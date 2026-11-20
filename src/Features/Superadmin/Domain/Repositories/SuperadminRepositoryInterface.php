@@ -100,6 +100,7 @@ interface SuperadminRepositoryInterface
      * @param  array<int, array{nombre: string, capacidad: int, descripcion?: ?string, atributos?: ?array<string, mixed>}>|null  $instalaciones
      * @param  array<int, array{nombre: string, unidades: array<int, array{agrupacion: string, identificador: string}>}>|null  $clasificaciones
      * @param  ModuloSistema[]|null  $modulos
+     * @param  string[]|null  $modulosDeshabilitados
      * @param  string[]|null  $administradoresIds
      *
      * @throws RecursoNoEncontradoException
@@ -113,6 +114,7 @@ interface SuperadminRepositoryInterface
         ?array $clasificaciones,
         ?array $instalaciones,
         ?array $modulos,
+        ?array $modulosDeshabilitados,
         ?array $administradoresIds,
         bool $resetEstructura,
     ): ProyectoDetalle;
