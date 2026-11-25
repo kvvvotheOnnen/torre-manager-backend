@@ -65,3 +65,22 @@ reutiliza como destino final del registro.
 - **Verificación:** `RegistroResidenteTest` 8/8 en verde; verificado en vivo el
   endpoint de unidades del proyecto de ejemplo.
 
+## Corrección posterior: error 500 al enviar solicitud con mascotas
+
+- **Síntoma:** al completar el paso de mascotas y enviar, la app mostraba
+  "ha ocurrido un error con el servidor".
+- **Causa raíz:** las migraciones nuevas (`solicitud_residente_mascotas` y
+  `mascotas`) seguían en estado `Pending` en la base de datos del entorno de
+  desarrollo (contenedor). El INSERT de mascotas fallaba por tabla inexistente,
+  la transacción hacía rollback y el endpoint respondía 500. Los tests no lo
+  detectaban porque `RefreshDatabase` aplica las migraciones en la base de
+  pruebas.
+- **Resolución:** ejecutar `php artisan migrate` en el contenedor para aplicar
+  las migraciones pendientes. Sin cambios de código.
+- **Verificación:** smoke test end-to-end con `POST /api/registro/solicitud`
+  incluyendo una mascota → 201, con la mascota persistida en
+  `solicitud_residente_mascotas`; datos de prueba eliminados después.
+- **Nota operativa:** tras desplegar cambios con migraciones nuevas, el entorno
+  correspondiente debe ejecutar `php artisan migrate`.
+
+
