@@ -17,6 +17,8 @@ interface SolicitudResidenteRepositoryInterface
     /** @return SolicitudResidente[] */
     public function listarPorUsuario(string $usuarioId): array;
 
+    public function transferirMascotasAUnidad(string $id, string $unidadPrincipalId): void;
+
     public function marcarAprobada(string $id, string $decididoPorId): void;
 
     public function marcarRechazada(string $id, string $decididoPorId, string $motivo): void;

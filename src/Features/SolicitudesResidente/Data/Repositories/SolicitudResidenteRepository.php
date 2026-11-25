@@ -3,16 +3,19 @@
 namespace Features\SolicitudesResidente\Data\Repositories;
 
 use App\Models\SolicitudResidente as SolicitudResidenteModel;
+use App\Models\SolicitudResidenteMascota as MascotaModel;
 use App\Models\SolicitudResidentePersona as PersonaModel;
 use App\Models\UnidadAccesoria;
 use Features\Acceso\Domain\Entities\TipoVinculo;
 use Features\SolicitudesResidente\Domain\Entities\EstadoSolicitud;
 use Features\SolicitudesResidente\Domain\Entities\InstalacionUnidad;
+use Features\SolicitudesResidente\Domain\Entities\MascotaRegistro;
 use Features\SolicitudesResidente\Domain\Entities\OrigenSolicitud;
 use Features\SolicitudesResidente\Domain\Entities\PersonaSolicitud;
 use Features\SolicitudesResidente\Domain\Entities\SolicitudResidente;
 use Features\SolicitudesResidente\Domain\Entities\TipoSolicitud;
 use Features\SolicitudesResidente\Domain\Repositories\SolicitudResidenteRepositoryInterface;
+use Illuminate\Support\Facades\DB;
 
 final class SolicitudResidenteRepository implements SolicitudResidenteRepositoryInterface
 {
@@ -58,6 +61,26 @@ final class SolicitudResidenteRepository implements SolicitudResidenteRepository
             ->all();
     }
 
+    public function transferirMascotasAUnidad(string $id, string $unidadPrincipalId): void
+    {
+        $mascotas = DB::table('solicitud_residente_mascotas')
+            ->where('solicitud_id', $id)
+            ->get();
+
+        foreach ($mascotas as $mascota) {
+            DB::table('mascotas')->insert([
+                'unidad_principal_id' => $unidadPrincipalId,
+                'nombre' => $mascota->nombre,
+                'especie' => $mascota->especie,
+                'raza' => $mascota->raza,
+                'microchip' => $mascota->microchip,
+                'foto_url' => $mascota->foto_url,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+    }
+
     public function marcarAprobada(string $id, string $decididoPorId): void
     {
         SolicitudResidenteModel::query()->whereKey($id)->update([
@@ -84,6 +107,7 @@ final class SolicitudResidenteRepository implements SolicitudResidenteRepository
             'personas',
             'unidadPrincipal.agrupacion',
             'unidadPrincipal.unidadesAccesorias',
+            'mascotas',
             'solicitadoPor',
             'decididoPor',
         ]);
@@ -131,6 +155,16 @@ final class SolicitudResidenteRepository implements SolicitudResidenteRepository
             decididoPorNombre: $solicitud->decididoPor?->nombre,
             decididoAt: $solicitud->decidido_at?->toDateTimeString(),
             createdAt: (string) $solicitud->created_at?->toDateTimeString(),
+            mascotas: $solicitud->mascotas
+                ->map(fn (MascotaModel $mascota) => new MascotaRegistro(
+                    nombre: $mascota->nombre,
+                    especie: \Features\SolicitudesResidente\Domain\Entities\EspecieMascota::tryFrom((string) $mascota->especie)
+                        ?? \Features\SolicitudesResidente\Domain\Entities\EspecieMascota::Otro,
+                    raza: (string) $mascota->raza,
+                    microchip: $mascota->microchip,
+                    fotoUrl: $mascota->foto_url,
+                ))
+                ->all(),
         );
     }
 }

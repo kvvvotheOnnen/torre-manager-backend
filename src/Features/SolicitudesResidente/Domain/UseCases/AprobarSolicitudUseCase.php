@@ -63,6 +63,8 @@ final class AprobarSolicitudUseCase
                 null,
             );
 
+            $this->solicitudes->transferirMascotasAUnidad($solicitudId, $solicitud->unidadPrincipalId());
+
             $this->solicitudes->marcarAprobada($solicitudId, $decididoPorId);
         });
 

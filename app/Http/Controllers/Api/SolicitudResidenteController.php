@@ -212,6 +212,13 @@ final class SolicitudResidenteController extends Controller
                 'tipo' => $instalacion->tipo(),
                 'asignacion' => $instalacion->asignacion(),
             ], $solicitud->instalaciones()),
+            'mascotas' => array_map(fn ($mascota) => [
+                'nombre' => $mascota->nombre(),
+                'especie' => $mascota->especie()->value,
+                'raza' => $mascota->raza(),
+                'microchip' => $mascota->microchip(),
+                'foto_url' => $mascota->fotoUrl(),
+            ], $solicitud->mascotas()),
         ];
     }
 }

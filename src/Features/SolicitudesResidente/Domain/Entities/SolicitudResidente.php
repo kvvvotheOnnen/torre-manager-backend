@@ -7,6 +7,7 @@ final class SolicitudResidente
     /**
      * @param  PersonaSolicitud[]  $personas
      * @param  InstalacionUnidad[]  $instalaciones
+     * @param  MascotaRegistro[]  $mascotas
      */
     public function __construct(
         private readonly string $id,
@@ -26,6 +27,7 @@ final class SolicitudResidente
         private readonly ?string $decididoPorNombre,
         private readonly ?string $decididoAt,
         private readonly string $createdAt,
+        private readonly array $mascotas = [],
     ) {}
 
     public function id(): string
@@ -83,6 +85,12 @@ final class SolicitudResidente
     public function instalaciones(): array
     {
         return $this->instalaciones;
+    }
+
+    /** @return MascotaRegistro[] */
+    public function mascotas(): array
+    {
+        return $this->mascotas;
     }
 
     public function solicitadoPorId(): ?string

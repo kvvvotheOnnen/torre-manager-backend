@@ -48,6 +48,11 @@ class SolicitudResidente extends Model
             ->orderBy('id');
     }
 
+    public function mascotas(): HasMany
+    {
+        return $this->hasMany(SolicitudResidenteMascota::class, 'solicitud_id');
+    }
+
     public function solicitadoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'solicitado_por_id');

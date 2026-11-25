@@ -38,7 +38,9 @@ use Features\Residente\Data\Repositories\ResidenteRepository;
 use Features\Residente\Domain\Repositories\ResidenteRepositoryInterface;
 use Features\Servicios\Data\Repositories\ServiciosRepository;
 use Features\Servicios\Domain\Repositories\ServiciosRepositoryInterface;
+use Features\SolicitudesResidente\Data\Repositories\RegistroResidenteRepository;
 use Features\SolicitudesResidente\Data\Repositories\SolicitudResidenteRepository;
+use Features\SolicitudesResidente\Domain\Repositories\RegistroResidenteRepositoryInterface;
 use Features\SolicitudesResidente\Domain\Repositories\SolicitudResidenteRepositoryInterface;
 use Features\Superadmin\Data\Repositories\SuperadminRepository;
 use Features\Superadmin\Domain\Repositories\SuperadminRepositoryInterface;
@@ -53,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(MembresiaProyectoRepositoryInterface::class, MembresiaProyectoRepository::class);
         $this->app->bind(SolicitudResidenteRepositoryInterface::class, SolicitudResidenteRepository::class);
+        $this->app->bind(RegistroResidenteRepositoryInterface::class, RegistroResidenteRepository::class);
         $this->app->bind(VinculoUnidadRepositoryInterface::class, VinculoUnidadRepository::class);
         $this->app->bind(DocumentoRepositoryInterface::class, DocumentoRepository::class);
         $this->app->bind(ExtractorPdfInterface::class, PdfTextExtractor::class);

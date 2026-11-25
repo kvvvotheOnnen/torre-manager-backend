@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\FuncionesDashboardController;
 use App\Http\Controllers\Api\InfraestructuraController;
 use App\Http\Controllers\Api\MarketplaceController;
 use App\Http\Controllers\Api\PaqueteriaController;
+use App\Http\Controllers\Api\RegistroResidenteController;
 use App\Http\Controllers\Api\ResidenteController;
 use App\Http\Controllers\Api\ServiciosController;
 use App\Http\Controllers\Api\SolicitudResidenteController;
@@ -17,6 +18,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
+
+Route::middleware('throttle:30,1')->prefix('registro')->group(function (): void {
+    Route::get('proyectos', [RegistroResidenteController::class, 'proyectos']);
+    Route::get('proyectos/{proyecto}/unidades', [RegistroResidenteController::class, 'unidades'])->whereNumber('proyecto');
+    Route::post('solicitud', [RegistroResidenteController::class, 'store'])->middleware('throttle:10,1');
+});
 
 Route::get('/user', function (Request $request) {
     return $request->user();
