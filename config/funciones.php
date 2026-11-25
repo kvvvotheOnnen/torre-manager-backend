@@ -158,6 +158,7 @@ return [
                 'publicar' => 'marketplace.publicar',
                 'gestionar' => 'marketplace.gestionar',
                 'moderar' => 'marketplace.moderar',
+                'aprobar' => 'marketplace.aprobar',
                 'favoritos' => 'marketplace.favoritos',
             ],
             'ambito' => 'proyecto',

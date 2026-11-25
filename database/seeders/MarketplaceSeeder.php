@@ -15,8 +15,8 @@ use Illuminate\Database\Seeder;
  * Publicaciones de ejemplo del marketplace.
  *
  * Se siembran sin imagen para que el cliente muestre el recuadro "Sin imagen".
- * Incluye estados vendida, retirada y eliminada para probar historial y
- * favoritos sin tener que ejecutar el flujo completo.
+ * Incluye estados vendida, retirada, eliminada y pendiente para probar historial,
+ * favoritos y solicitudes sin tener que ejecutar el flujo completo.
  */
 final class MarketplaceSeeder extends Seeder
 {
@@ -78,6 +78,15 @@ final class MarketplaceSeeder extends Seeder
                 'categoria' => CategoriaProducto::Electronica->value,
                 'condicion' => CondicionProducto::Usado->value,
                 'estado' => EstadoPublicacion::Disponible->value,
+            ],
+            [
+                'usuario_id' => $publicador->getKey(),
+                'titulo' => 'Patinete eléctrico con batería nueva',
+                'descripcion' => 'Patinete eléctrico de 250 W con 20 km de autonomía. Incluye cargador original.',
+                'precio' => 150000,
+                'categoria' => CategoriaProducto::Electronica->value,
+                'condicion' => CondicionProducto::SemiNuevo->value,
+                'estado' => EstadoPublicacion::Pendiente->value,
             ],
             [
                 'usuario_id' => $dueno->getKey(),

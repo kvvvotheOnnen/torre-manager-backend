@@ -39,6 +39,18 @@ final class VinculoUnidadRepository implements VinculoUnidadRepositoryInterface
             ->all();
     }
 
+    public function usuariosActualesDeUnidad(string $unidadPrincipalId): array
+    {
+        return UnidadUsuario::query()
+            ->where('unidad_principal_id', $unidadPrincipalId)
+            ->where('es_actual', true)
+            ->pluck('usuario_id')
+            ->map(fn ($id) => (string) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     public function crear(
         string $unidadPrincipalId,
         string $usuarioId,

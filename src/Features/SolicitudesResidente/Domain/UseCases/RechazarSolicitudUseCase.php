@@ -4,6 +4,7 @@ namespace Features\SolicitudesResidente\Domain\UseCases;
 
 use Features\SolicitudesResidente\Domain\Entities\EstadoSolicitud;
 use Features\SolicitudesResidente\Domain\Entities\SolicitudResidente;
+use Features\SolicitudesResidente\Domain\Events\SolicitudRechazada;
 use Features\SolicitudesResidente\Domain\Exceptions\SolicitudNoEncontradaException;
 use Features\SolicitudesResidente\Domain\Exceptions\SolicitudYaDecididaException;
 use Features\SolicitudesResidente\Domain\Repositories\SolicitudResidenteRepositoryInterface;
@@ -28,7 +29,22 @@ final class RechazarSolicitudUseCase
             $this->solicitudes->marcarRechazada($solicitudId, $decididoPorId, $motivo);
         });
 
-        return $this->solicitudes->obtener($solicitudId)
+        $solicitud = $this->solicitudes->obtener($solicitudId)
             ?? throw SolicitudNoEncontradaException::porqueNoExiste();
+
+        foreach ($solicitud->personas() as $persona) {
+            if ($persona->esPrincipal() && $persona->usuarioId() !== null) {
+                event(new SolicitudRechazada(
+                    solicitudId: $solicitud->id(),
+                    proyectoId: $solicitud->proyectoId(),
+                    usuarioId: $persona->usuarioId(),
+                    motivo: $motivo,
+                ));
+
+                break;
+            }
+        }
+
+        return $solicitud;
     }
 }

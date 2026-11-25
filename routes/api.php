@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\FuncionesDashboardController;
 use App\Http\Controllers\Api\InfraestructuraController;
 use App\Http\Controllers\Api\MarketplaceController;
+use App\Http\Controllers\Api\NotificacionesController;
 use App\Http\Controllers\Api\PaqueteriaController;
 use App\Http\Controllers\Api\ResidenteController;
 use App\Http\Controllers\Api\ServiciosController;
@@ -101,6 +102,19 @@ Route::middleware(['auth:sanctum', 'puede:marketplace.favoritos'])->prefix('mark
 
 Route::middleware(['auth:sanctum', 'puede:marketplace.moderar'])->prefix('marketplace')->group(function (): void {
     Route::delete('publicaciones/{id}', [MarketplaceController::class, 'destroy'])->whereNumber('id');
+});
+
+Route::middleware(['auth:sanctum', 'puede:marketplace.aprobar'])->prefix('marketplace')->group(function (): void {
+    Route::get('solicitudes', [MarketplaceController::class, 'solicitudes']);
+    Route::post('publicaciones/{id}/aprobar', [MarketplaceController::class, 'aprobar'])->whereNumber('id');
+    Route::post('publicaciones/{id}/rechazar', [MarketplaceController::class, 'rechazar'])->whereNumber('id');
+});
+
+Route::middleware(['auth:sanctum', 'puede:notificaciones.ver'])->prefix('notificaciones')->group(function (): void {
+    Route::get('/', [NotificacionesController::class, 'index']);
+    Route::get('no-leidas', [NotificacionesController::class, 'noLeidas']);
+    Route::patch('leer-todas', [NotificacionesController::class, 'leerTodas']);
+    Route::patch('{id}/leer', [NotificacionesController::class, 'leer'])->whereNumber('id');
 });
 
 Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->group(function (): void {

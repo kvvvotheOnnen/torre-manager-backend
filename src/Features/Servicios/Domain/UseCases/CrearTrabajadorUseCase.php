@@ -4,6 +4,7 @@ namespace Features\Servicios\Domain\UseCases;
 
 use Features\Servicios\Domain\Entities\TipoServicio;
 use Features\Servicios\Domain\Entities\TrabajadorServicio;
+use Features\Servicios\Domain\Events\TrabajadorPublicado;
 use Features\Servicios\Domain\Repositories\ServiciosRepositoryInterface;
 
 final class CrearTrabajadorUseCase
@@ -22,7 +23,7 @@ final class CrearTrabajadorUseCase
         ?string $descripcion,
         ?string $fotoPath,
     ): TrabajadorServicio {
-        return $this->repository->crear([
+        $trabajador = $this->repository->crear([
             'proyecto_id' => $proyectoId,
             'nombre' => $nombre,
             'nombre_empresa' => $nombreEmpresa,
@@ -32,5 +33,15 @@ final class CrearTrabajadorUseCase
             'foto_path' => $fotoPath,
             'creado_por' => $creadoPor,
         ]);
+
+        event(new TrabajadorPublicado(
+            trabajadorId: $trabajador->id(),
+            proyectoId: $proyectoId,
+            nombre: $trabajador->nombre(),
+            tipoServicio: $tipo->etiqueta(),
+            creadoPorId: $creadoPor,
+        ));
+
+        return $trabajador;
     }
 }

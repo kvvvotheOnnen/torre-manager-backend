@@ -6,6 +6,7 @@ use Features\Acceso\Domain\Entities\TipoVinculo;
 use Features\Acceso\Domain\UseCases\AsignarVinculoUnidadUseCase;
 use Features\SolicitudesResidente\Domain\Entities\EstadoSolicitud;
 use Features\SolicitudesResidente\Domain\Entities\SolicitudResidente;
+use Features\SolicitudesResidente\Domain\Events\SolicitudAprobada;
 use Features\SolicitudesResidente\Domain\Exceptions\SolicitudInvalidaException;
 use Features\SolicitudesResidente\Domain\Exceptions\SolicitudNoEncontradaException;
 use Features\SolicitudesResidente\Domain\Exceptions\SolicitudYaDecididaException;
@@ -61,12 +62,27 @@ final class AprobarSolicitudUseCase
                 $principal->tipoVinculo(),
                 now()->toDateString(),
                 null,
+                notificar: false,
             );
 
             $this->solicitudes->marcarAprobada($solicitudId, $decididoPorId);
         });
 
-        return $this->solicitudes->obtener($solicitudId)
+        $solicitud = $this->solicitudes->obtener($solicitudId)
             ?? throw SolicitudNoEncontradaException::porqueNoExiste();
+
+        foreach ($solicitud->personas() as $persona) {
+            if ($persona->esPrincipal() && $persona->usuarioId() !== null) {
+                event(new SolicitudAprobada(
+                    solicitudId: $solicitud->id(),
+                    proyectoId: $solicitud->proyectoId(),
+                    usuarioId: $persona->usuarioId(),
+                ));
+
+                break;
+            }
+        }
+
+        return $solicitud;
     }
 }

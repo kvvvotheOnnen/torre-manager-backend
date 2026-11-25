@@ -20,6 +20,8 @@ final class PublicacionMarketplace
         private readonly ?string $eliminadoPor,
         private readonly ?string $eliminadoPorRol,
         private readonly ?string $eliminadoEn,
+        private readonly ?string $motivoRechazo,
+        private readonly ?string $rechazadoEn,
         private readonly ?string $creadoEn,
     ) {}
 
@@ -96,6 +98,16 @@ final class PublicacionMarketplace
     public function eliminadoEn(): ?string
     {
         return $this->eliminadoEn;
+    }
+
+    public function motivoRechazo(): ?string
+    {
+        return $this->motivoRechazo;
+    }
+
+    public function rechazadoEn(): ?string
+    {
+        return $this->rechazadoEn;
     }
 
     public function creadoEn(): ?string

@@ -27,4 +27,12 @@ interface MembresiaProyectoRepositoryInterface
     public function proyectosPorUnidades(string $usuarioId): array;
 
     public function tieneUnidadActualEnProyecto(string $usuarioId, string $proyectoId): bool;
+
+    /**
+     * Usuarios con membresía activa en el proyecto y alguno de los roles dados.
+     *
+     * @param  Rol[]  $roles
+     * @return string[]
+     */
+    public function usuariosIdsConRoles(string $proyectoId, array $roles): array;
 }

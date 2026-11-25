@@ -21,14 +21,25 @@ interface MarketplaceRepositoryInterface
     ): array;
 
     /**
+     * Publicaciones de un usuario en los estados indicados.
+     *
      * @return PublicacionMarketplace[]
      */
-    public function listarDeUsuario(string $usuarioId, string $proyectoId, bool $soloDisponibles): array;
+    public function listarDeUsuario(string $usuarioId, string $proyectoId, EstadoPublicacion ...$estados): array;
 
     /**
      * @return PublicacionMarketplace[]
      */
     public function listarFavoritas(string $usuarioId, string $proyectoId): array;
+
+    /**
+     * Solicitudes de publicación pendientes de aprobación, la más antigua primero.
+     *
+     * @return PublicacionMarketplace[]
+     */
+    public function listarPendientes(string $proyectoId): array;
+
+    public function contarPendientes(string $proyectoId): int;
 
     public function obtener(string $id, string $proyectoId): PublicacionMarketplace;
 

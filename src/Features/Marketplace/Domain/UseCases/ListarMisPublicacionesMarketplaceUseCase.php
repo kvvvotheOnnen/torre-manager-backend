@@ -2,6 +2,7 @@
 
 namespace Features\Marketplace\Domain\UseCases;
 
+use Features\Marketplace\Domain\Entities\EstadoPublicacion;
 use Features\Marketplace\Domain\Entities\PublicacionVisible;
 use Features\Marketplace\Domain\Repositories\MarketplaceRepositoryInterface;
 use Features\Marketplace\Domain\Services\VisibilidadMarketplaceService;
@@ -14,13 +15,21 @@ final class ListarMisPublicacionesMarketplaceUseCase
     ) {}
 
     /**
+     * Incluye disponibles, pendientes de aprobación y rechazadas.
+     *
      * @return PublicacionVisible[]
      */
     public function execute(string $usuarioId, string $proyectoId): array
     {
         return array_map(
             fn ($publicacion) => $this->visibilidad->para($publicacion, $usuarioId, $proyectoId),
-            $this->repository->listarDeUsuario($usuarioId, $proyectoId, true),
+            $this->repository->listarDeUsuario(
+                $usuarioId,
+                $proyectoId,
+                EstadoPublicacion::Disponible,
+                EstadoPublicacion::Pendiente,
+                EstadoPublicacion::Rechazada,
+            ),
         );
     }
 }

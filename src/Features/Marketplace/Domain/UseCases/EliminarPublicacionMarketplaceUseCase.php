@@ -60,6 +60,7 @@ final class EliminarPublicacionMarketplaceUseCase
             publicacionId: $id,
             proyectoId: $proyectoId,
             propietarioId: $publicacion->usuarioId(),
+            titulo: $publicacion->titulo(),
             moderadorId: $moderadorId,
             rolModerador: $rol,
             motivo: $motivo,
