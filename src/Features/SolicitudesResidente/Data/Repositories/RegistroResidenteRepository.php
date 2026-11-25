@@ -47,7 +47,7 @@ final class RegistroResidenteRepository implements RegistroResidenteRepositoryIn
                 identificador: (string) $unidad->identificador,
                 agrupacion: (string) ($unidad->agrupacion?->nombre ?? ''),
             ))
-            ->sortBy(fn (UnidadRegistro $unidad) => $unidad->identificador)
+            ->sortBy(fn (UnidadRegistro $unidad) => $unidad->identificador())
             ->values()
             ->all();
     }

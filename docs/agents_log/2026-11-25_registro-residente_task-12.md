@@ -49,3 +49,19 @@ reutiliza como destino final del registro.
 
 - La foto de mascota queda sin funcionalidad (la task lo indica explícitamente).
 - El envío real de la notificación depende del plan de Resend configurado.
+
+## Corrección posterior: endpoint de unidades devolvía 500
+
+- **Síntoma:** al elegir un proyecto en el paso 3, la app mostraba "el proyecto
+  no tiene unidades" aunque sí las tuviera.
+- **Causa:** en `RegistroResidenteRepository::listarUnidades()` el `sortBy`
+  recibía la entidad `UnidadRegistro` y accedía a la propiedad privada
+  `$unidad->identificador` en vez del getter `identificador()`, lanzando un
+  `Error` que el endpoint convertía en 500.
+- **Corrección:** se usa el getter `identificador()` en el `sortBy`.
+- **Cobertura:** se agregó un test del listado público de proyectos y unidades
+  (`test_listado_publico_de_proyectos_y_unidades`) que ejercita el `sortBy` con
+  al menos una unidad.
+- **Verificación:** `RegistroResidenteTest` 8/8 en verde; verificado en vivo el
+  endpoint de unidades del proyecto de ejemplo.
+

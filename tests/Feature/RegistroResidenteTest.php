@@ -19,6 +19,23 @@ class RegistroResidenteTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_listado_publico_de_proyectos_y_unidades(): void
+    {
+        [$proyecto, $unidad] = $this->estructura('Rosen');
+
+        $this->getJson('/api/registro/proyectos')
+            ->assertOk()
+            ->assertJsonPath('proyectos.0.id', (string) $proyecto->getKey())
+            ->assertJsonPath('proyectos.0.nombre', 'Rosen');
+
+        $this->getJson('/api/registro/proyectos/'.$proyecto->getKey().'/unidades')
+            ->assertOk()
+            ->assertJsonCount(1, 'unidades')
+            ->assertJsonPath('unidades.0.id', (string) $unidad->getKey())
+            ->assertJsonPath('unidades.0.identificador', 'Rosen-101')
+            ->assertJsonPath('unidades.0.etiqueta', 'Torre Rosen - Rosen-101');
+    }
+
     public function test_registro_crea_cuenta_solicitud_y_mascotas(): void
     {
         [$proyecto, $unidad] = $this->estructura();
