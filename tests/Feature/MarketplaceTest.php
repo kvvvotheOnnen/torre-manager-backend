@@ -39,7 +39,7 @@ final class MarketplaceTest extends TestCase
         $response->assertCreated()
             ->assertJsonPath('publicacion.titulo', 'Silla de escritorio')
             ->assertJsonPath('publicacion.precio', 0)
-            ->assertJsonPath('publicacion.estado', 'disponible')
+            ->assertJsonPath('publicacion.estado', 'pendiente')
             ->assertJsonPath('publicacion.es_mia', true)
             ->assertJsonPath('publicacion.contacto_disponible', false);
 

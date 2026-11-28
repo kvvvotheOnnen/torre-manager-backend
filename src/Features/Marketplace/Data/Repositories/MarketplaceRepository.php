@@ -38,7 +38,11 @@ final class MarketplaceRepository implements MarketplaceRepositoryInterface
         } elseif (! $todas) {
             $consulta->where('estado', EstadoPublicacion::Disponible->value);
         } else {
-            $consulta->where('estado', '!=', EstadoPublicacion::Eliminada->value);
+            $consulta->whereNotIn('estado', [
+                EstadoPublicacion::Eliminada->value,
+                EstadoPublicacion::Pendiente->value,
+                EstadoPublicacion::Rechazada->value,
+            ]);
         }
 
         if ($categoria !== null) {
@@ -63,23 +67,19 @@ final class MarketplaceRepository implements MarketplaceRepositoryInterface
             ->all();
     }
 
-    public function listarDeUsuario(string $usuarioId, string $proyectoId, bool $soloDisponibles): array
+    public function listarDeUsuario(string $usuarioId, string $proyectoId, EstadoPublicacion ...$estados): array
     {
-        $consulta = PublicacionModel::query()
-            ->where('proyecto_id', $proyectoId)
-            ->where('usuario_id', $usuarioId);
-
-        if ($soloDisponibles) {
-            $consulta->where('estado', EstadoPublicacion::Disponible->value);
-        } else {
-            $consulta->whereIn('estado', [
-                EstadoPublicacion::Vendida->value,
-                EstadoPublicacion::Retirada->value,
-                EstadoPublicacion::Eliminada->value,
-            ]);
+        if ($estados === []) {
+            return [];
         }
 
-        return $consulta
+        return PublicacionModel::query()
+            ->where('proyecto_id', $proyectoId)
+            ->where('usuario_id', $usuarioId)
+            ->whereIn('estado', array_map(
+                static fn (EstadoPublicacion $estado): string => $estado->value,
+                $estados,
+            ))
             ->orderByDesc('updated_at')
             ->get()
             ->map(fn (PublicacionModel $modelo) => $this->aEntidad($modelo))
@@ -104,6 +104,26 @@ final class MarketplaceRepository implements MarketplaceRepositoryInterface
             ->get()
             ->map(fn (PublicacionModel $modelo) => $this->aEntidad($modelo))
             ->all();
+    }
+
+    public function listarPendientes(string $proyectoId): array
+    {
+        return PublicacionModel::query()
+            ->where('proyecto_id', $proyectoId)
+            ->where('estado', EstadoPublicacion::Pendiente->value)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (PublicacionModel $modelo) => $this->aEntidad($modelo))
+            ->all();
+    }
+
+    public function contarPendientes(string $proyectoId): int
+    {
+        return PublicacionModel::query()
+            ->where('proyecto_id', $proyectoId)
+            ->where('estado', EstadoPublicacion::Pendiente->value)
+            ->count();
     }
 
     public function obtener(string $id, string $proyectoId): PublicacionMarketplace
@@ -215,6 +235,8 @@ final class MarketplaceRepository implements MarketplaceRepositoryInterface
             eliminadoPor: $modelo->eliminado_por === null ? null : (string) $modelo->eliminado_por,
             eliminadoPorRol: $modelo->eliminado_por_rol === null ? null : (string) $modelo->eliminado_por_rol,
             eliminadoEn: $modelo->eliminado_en?->toIso8601String(),
+            motivoRechazo: $modelo->motivo_rechazo === null ? null : (string) $modelo->motivo_rechazo,
+            rechazadoEn: $modelo->rechazado_en?->toIso8601String(),
             creadoEn: $modelo->created_at?->toIso8601String(),
         );
     }

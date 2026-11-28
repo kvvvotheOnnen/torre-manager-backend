@@ -37,6 +37,8 @@ return [
             'marketplace.publicar',
             'marketplace.gestionar',
             'marketplace.moderar',
+            'marketplace.aprobar',
+            'notificaciones.ver',
         ],
 
         'conserje' => [
@@ -50,6 +52,8 @@ return [
             'servicios.ver',
             'marketplace.ver',
             'marketplace.moderar',
+            'marketplace.aprobar',
+            'notificaciones.ver',
         ],
 
         'propietario' => [
@@ -64,6 +68,7 @@ return [
             'marketplace.ver',
             'marketplace.publicar',
             'marketplace.favoritos',
+            'notificaciones.ver',
         ],
 
         'residente' => [
@@ -78,6 +83,7 @@ return [
             'marketplace.ver',
             'marketplace.publicar',
             'marketplace.favoritos',
+            'notificaciones.ver',
         ],
     ],
 ];

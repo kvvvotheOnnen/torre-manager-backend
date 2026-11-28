@@ -11,3 +11,7 @@ Artisan::command('inspire', function () {
 Schedule::command('archivos:limpiar-huerfanos')
     ->dailyAt('03:00')
     ->withoutOverlapping();
+
+Schedule::command('paquetes:recordar')
+    ->dailyAt('08:00')
+    ->withoutOverlapping();

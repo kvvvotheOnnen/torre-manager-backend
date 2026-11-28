@@ -1,0 +1,31 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('notificaciones', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('usuario_id')->constrained('usuarios')->cascadeOnDelete();
+            $table->foreignId('proyecto_id')->nullable()->constrained('proyectos')->nullOnDelete();
+            $table->string('tipo');
+            $table->string('titulo');
+            $table->text('mensaje');
+            $table->json('datos')->nullable();
+            $table->boolean('leida')->default(false);
+            $table->timestamp('leida_at')->nullable();
+            $table->timestamps();
+
+            $table->index(['usuario_id', 'leida']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('notificaciones');
+    }
+};

@@ -2,6 +2,7 @@
 
 namespace Features\Marketplace\Domain\UseCases;
 
+use Features\Marketplace\Domain\Entities\EstadoPublicacion;
 use Features\Marketplace\Domain\Entities\PublicacionVisible;
 use Features\Marketplace\Domain\Repositories\MarketplaceRepositoryInterface;
 use Features\Marketplace\Domain\Services\VisibilidadMarketplaceService;
@@ -20,7 +21,13 @@ final class ListarHistorialMarketplaceUseCase
     {
         return array_map(
             fn ($publicacion) => $this->visibilidad->para($publicacion, $usuarioId, $proyectoId),
-            $this->repository->listarDeUsuario($usuarioId, $proyectoId, false),
+            $this->repository->listarDeUsuario(
+                $usuarioId,
+                $proyectoId,
+                EstadoPublicacion::Vendida,
+                EstadoPublicacion::Retirada,
+                EstadoPublicacion::Eliminada,
+            ),
         );
     }
 }

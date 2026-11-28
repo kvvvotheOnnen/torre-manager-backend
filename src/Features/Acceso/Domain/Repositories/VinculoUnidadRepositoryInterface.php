@@ -14,6 +14,13 @@ interface VinculoUnidadRepositoryInterface
     /** @return VinculoUnidad[] */
     public function listarPorUnidad(string $unidadPrincipalId): array;
 
+    /**
+     * IDs de los usuarios con vínculo actual en la unidad.
+     *
+     * @return string[]
+     */
+    public function usuariosActualesDeUnidad(string $unidadPrincipalId): array;
+
     public function crear(
         string $unidadPrincipalId,
         string $usuarioId,

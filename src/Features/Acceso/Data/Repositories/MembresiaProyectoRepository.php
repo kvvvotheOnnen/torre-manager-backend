@@ -109,6 +109,21 @@ final class MembresiaProyectoRepository implements MembresiaProyectoRepositoryIn
             ->exists();
     }
 
+    public function usuariosIdsConRoles(string $proyectoId, array $roles): array
+    {
+        $valores = array_map(static fn (Rol $rol) => $rol->value, $roles);
+
+        return ProyectoUsuario::query()
+            ->where('proyecto_id', $proyectoId)
+            ->where('estado', 'activo')
+            ->whereIn('rol', $valores)
+            ->pluck('usuario_id')
+            ->map(static fn ($id) => (string) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     private function toEntity(ProyectoUsuario $membresia): MembresiaProyecto
     {
         return new MembresiaProyecto(

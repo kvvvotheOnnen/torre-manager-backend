@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Marketplace\EliminarPublicacionRequest;
 use App\Http\Requests\Marketplace\FavoritoRequest;
 use App\Http\Requests\Marketplace\GuardarPublicacionRequest;
+use App\Http\Requests\Marketplace\RechazarSolicitudRequest;
 use Features\Archivos\Domain\Contracts\AlmacenArchivos;
 use Features\Marketplace\Domain\Entities\CategoriaProducto;
 use Features\Marketplace\Domain\Entities\CondicionProducto;
@@ -13,18 +14,22 @@ use Features\Marketplace\Domain\Entities\EstadoPublicacion;
 use Features\Marketplace\Domain\Entities\PublicacionVisible;
 use Features\Marketplace\Domain\Exceptions\AccionMarketplaceNoPermitidaException;
 use Features\Marketplace\Domain\Exceptions\MotivoModeracionRequeridoException;
+use Features\Marketplace\Domain\Exceptions\MotivoRechazoRequeridoException;
 use Features\Marketplace\Domain\Exceptions\PublicacionNoEditableException;
 use Features\Marketplace\Domain\Exceptions\PublicacionNoEncontradaException;
 use Features\Marketplace\Domain\UseCases\ActualizarPublicacionMarketplaceUseCase;
 use Features\Marketplace\Domain\UseCases\AlternarFavoritoMarketplaceUseCase;
+use Features\Marketplace\Domain\UseCases\AprobarSolicitudMarketplaceUseCase;
 use Features\Marketplace\Domain\UseCases\CrearPublicacionMarketplaceUseCase;
 use Features\Marketplace\Domain\UseCases\EliminarPublicacionMarketplaceUseCase;
 use Features\Marketplace\Domain\UseCases\ListarFavoritosMarketplaceUseCase;
 use Features\Marketplace\Domain\UseCases\ListarHistorialMarketplaceUseCase;
 use Features\Marketplace\Domain\UseCases\ListarMisPublicacionesMarketplaceUseCase;
 use Features\Marketplace\Domain\UseCases\ListarPublicacionesMarketplaceUseCase;
+use Features\Marketplace\Domain\UseCases\ListarSolicitudesMarketplaceUseCase;
 use Features\Marketplace\Domain\UseCases\MarcarPublicacionVendidaUseCase;
 use Features\Marketplace\Domain\UseCases\ObtenerPublicacionMarketplaceUseCase;
+use Features\Marketplace\Domain\UseCases\RechazarSolicitudMarketplaceUseCase;
 use Features\Marketplace\Domain\UseCases\RetirarPublicacionMarketplaceUseCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -44,6 +49,9 @@ final class MarketplaceController extends Controller
         private readonly RetirarPublicacionMarketplaceUseCase $retirar,
         private readonly MarcarPublicacionVendidaUseCase $vender,
         private readonly EliminarPublicacionMarketplaceUseCase $eliminar,
+        private readonly ListarSolicitudesMarketplaceUseCase $solicitudes,
+        private readonly AprobarSolicitudMarketplaceUseCase $aprobarSolicitud,
+        private readonly RechazarSolicitudMarketplaceUseCase $rechazarSolicitud,
         private readonly AlternarFavoritoMarketplaceUseCase $alternarFavorito,
         private readonly AlmacenArchivos $almacen,
     ) {}
@@ -257,6 +265,67 @@ final class MarketplaceController extends Controller
         return response()->json(null, 204);
     }
 
+    public function solicitudes(Request $request): JsonResponse
+    {
+        $proyectoId = $this->proyectoId($request);
+
+        if ($proyectoId === null) {
+            return response()->json(['message' => 'Proyecto no encontrado.'], 404);
+        }
+
+        $resultado = $this->solicitudes->execute($proyectoId, $this->usuarioId($request));
+
+        return response()->json([
+            'pendientes' => $resultado['pendientes'],
+            'solicitudes' => $this->serializarLista($resultado['solicitudes']),
+        ]);
+    }
+
+    public function aprobar(Request $request, string $id): JsonResponse
+    {
+        return $this->accionSolicitud($request, $id, fn (string $proyectoId, string $usuarioId) => $this->aprobarSolicitud->execute($id, $proyectoId, $usuarioId));
+    }
+
+    public function rechazar(RechazarSolicitudRequest $request, string $id): JsonResponse
+    {
+        return $this->accionSolicitud(
+            $request,
+            $id,
+            fn (string $proyectoId, string $usuarioId) => $this->rechazarSolicitud->execute(
+                $id,
+                $proyectoId,
+                $usuarioId,
+                (string) $request->validated('motivo'),
+            ),
+        );
+    }
+
+    /**
+     * @param  callable(string, string): PublicacionVisible  $accion
+     */
+    private function accionSolicitud(Request $request, string $id, callable $accion): JsonResponse
+    {
+        $proyectoId = $this->proyectoId($request);
+
+        if ($proyectoId === null) {
+            return response()->json(['message' => 'Proyecto no encontrado.'], 404);
+        }
+
+        try {
+            $publicacion = $accion($proyectoId, $this->usuarioId($request));
+        } catch (Throwable $exception) {
+            $respuesta = $this->respuestaError($exception);
+
+            if ($respuesta !== null) {
+                return $respuesta;
+            }
+
+            throw $exception;
+        }
+
+        return response()->json(['publicacion' => $this->serializar($publicacion)]);
+    }
+
     public function favorito(FavoritoRequest $request, string $id): JsonResponse
     {
         $proyectoId = $this->proyectoId($request);
@@ -334,6 +403,7 @@ final class MarketplaceController extends Controller
             $exception instanceof AccionMarketplaceNoPermitidaException => 403,
             $exception instanceof PublicacionNoEditableException => 409,
             $exception instanceof MotivoModeracionRequeridoException => 422,
+            $exception instanceof MotivoRechazoRequeridoException => 422,
             default => null,
         };
 
@@ -419,6 +489,8 @@ final class MarketplaceController extends Controller
             'motivo_eliminacion' => $publicacion->motivoEliminacion(),
             'eliminado_por_rol' => $publicacion->eliminadoPorRol(),
             'eliminado_en' => $publicacion->eliminadoEn(),
+            'motivo_rechazo' => $publicacion->motivoRechazo(),
+            'rechazado_en' => $publicacion->rechazadoEn(),
             'creado_en' => $publicacion->creadoEn(),
         ];
     }

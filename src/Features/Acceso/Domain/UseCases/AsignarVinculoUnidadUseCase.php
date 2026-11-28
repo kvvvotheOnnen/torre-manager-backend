@@ -4,6 +4,7 @@ namespace Features\Acceso\Domain\UseCases;
 
 use Features\Acceso\Domain\Entities\TipoVinculo;
 use Features\Acceso\Domain\Entities\VinculoUnidad;
+use Features\Acceso\Domain\Events\VinculoAsignado;
 use Features\Acceso\Domain\Exceptions\UnidadNoDisponibleException;
 use Features\Acceso\Domain\Repositories\MembresiaProyectoRepositoryInterface;
 use Features\Acceso\Domain\Repositories\VinculoUnidadRepositoryInterface;
@@ -24,12 +25,13 @@ final class AsignarVinculoUnidadUseCase
         TipoVinculo $tipo,
         string $fechaInicio,
         ?string $fechaFin = null,
+        bool $notificar = true,
     ): VinculoUnidad {
         if (! $this->vinculos->unidadPerteneceAProyecto($unidadPrincipalId, $proyectoId)) {
             throw UnidadNoDisponibleException::becauseUnitIsMissing();
         }
 
-        return DB::transaction(function () use (
+        $vinculo = DB::transaction(function () use (
             $unidadPrincipalId,
             $usuarioId,
             $proyectoId,
@@ -59,5 +61,17 @@ final class AsignarVinculoUnidadUseCase
 
             return $vinculo;
         });
+
+        if ($notificar) {
+            event(new VinculoAsignado(
+                vinculoId: $vinculo->id(),
+                usuarioId: $vinculo->usuarioId(),
+                unidadPrincipalId: $vinculo->unidadPrincipalId(),
+                proyectoId: $vinculo->proyectoId(),
+                tipoVinculo: $vinculo->tipo()->value,
+            ));
+        }
+
+        return $vinculo;
     }
 }

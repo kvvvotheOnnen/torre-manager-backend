@@ -30,6 +30,8 @@ final class PublicacionMarketplace extends Model
         'eliminado_por',
         'eliminado_por_rol',
         'eliminado_en',
+        'motivo_rechazo',
+        'rechazado_en',
     ];
 
     protected function casts(): array
@@ -38,6 +40,7 @@ final class PublicacionMarketplace extends Model
             'precio' => 'integer',
             'vendido_en' => 'datetime',
             'eliminado_en' => 'datetime',
+            'rechazado_en' => 'datetime',
         ];
     }
 
